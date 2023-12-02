@@ -18,7 +18,7 @@ pub fn part_one(input: &str) -> Option<u32> {
     )
 }
 
-static NUMBERS: &[(&str, u32); 9] = &[
+static DIGITS: &[(&str, u32); 9] = &[
     ("one", 1),
     ("two", 2),
     ("three", 3),
@@ -30,6 +30,16 @@ static NUMBERS: &[(&str, u32); 9] = &[
     ("nine", 9),
 ];
 
+fn starting_digit(line: &str) -> Option<u32> {
+    DIGITS.iter().find_map(|ntup| {
+        if line.starts_with(ntup.0) {
+            Some(ntup.1)
+        } else {
+            None
+        }
+    })
+}
+
 pub fn part_two(input: &str) -> Option<u32> {
     Some(
         input
@@ -39,13 +49,7 @@ pub fn part_two(input: &str) -> Option<u32> {
                     if let Some(digit) = c.1.to_digit(10) {
                         Some(digit)
                     } else {
-                        NUMBERS.iter().find_map(|ntup| {
-                            if line[c.0..].starts_with(ntup.0) {
-                                Some(ntup.1)
-                            } else {
-                                None
-                            }
-                        })
+                        starting_digit(&line[c.0..])
                     }
                 });
                 let first = digits.next().expect("Expected a digit");
