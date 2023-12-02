@@ -18,6 +18,18 @@ pub fn part_one(input: &str) -> Option<u32> {
     )
 }
 
+static NUMBERS: &'static [(&'static str, u32); 9] = &[
+    ("one", 1),
+    ("two", 2),
+    ("three", 3),
+    ("four", 4),
+    ("five", 5),
+    ("six", 6),
+    ("seven", 7),
+    ("eight", 8),
+    ("nine", 9),
+];
+
 pub fn part_two(input: &str) -> Option<u32> {
     Some(
         input
@@ -27,27 +39,13 @@ pub fn part_two(input: &str) -> Option<u32> {
                     if let Some(digit) = c.1.to_digit(10) {
                         Some(digit)
                     } else {
-                        if line[c.0..].starts_with("one") {
-                            Some(1)
-                        } else if line[c.0..].starts_with("two") {
-                            Some(2)
-                        } else if line[c.0..].starts_with("three") {
-                            Some(3)
-                        } else if line[c.0..].starts_with("four") {
-                            Some(4)
-                        } else if line[c.0..].starts_with("five") {
-                            Some(5)
-                        } else if line[c.0..].starts_with("six") {
-                            Some(6)
-                        } else if line[c.0..].starts_with("seven") {
-                            Some(7)
-                        } else if line[c.0..].starts_with("eight") {
-                            Some(8)
-                        } else if line[c.0..].starts_with("nine") {
-                            Some(9)
-                        } else {
-                            None
-                        }
+                        NUMBERS.iter().find_map(|ntup| {
+                            if line[c.0..].starts_with(ntup.0) {
+                                Some(ntup.1)
+                            } else {
+                                None
+                            }
+                        })
                     }
                 });
                 let first = digits.next().expect("Expected a digit");
