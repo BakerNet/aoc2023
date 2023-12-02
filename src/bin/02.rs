@@ -14,15 +14,16 @@ pub fn part_one(input: &str) -> Option<u32> {
                 let game_id = game_re.captures(line).expect("Expected game_id to exist")[1]
                     .parse::<u32>()
                     .expect("Expect game_id to be an int");
-                let large_count = |re: Regex, max: u32| {
+                let has_over_max = |re: Regex, max: u32| {
                     re.captures_iter(line)
                         .filter(|c| c[1].parse::<u32>().expect("Color capture should be int") > max)
                         .count()
+                        != 0
                 };
-                let reds = large_count(red_re, 12);
-                let greens = large_count(green_re, 13);
-                let blues = large_count(blue_re, 14);
-                if reds != 0 || greens != 0 || blues != 0 {
+                let reds_over_max = has_over_max(red_re, 12);
+                let greens_over_max = has_over_max(green_re, 13);
+                let blues_over_max = has_over_max(blue_re, 14);
+                if reds_over_max || greens_over_max || blues_over_max {
                     None
                 } else {
                     Some(game_id)
