@@ -18,7 +18,7 @@ pub fn part_one(input: &str) -> Option<u32> {
     )
 }
 
-static NUMBERS: &'static [(&'static str, u32); 9] = &[
+static NUMBERS: &[(&str, u32); 9] = &[
     ("one", 1),
     ("two", 2),
     ("three", 3),
