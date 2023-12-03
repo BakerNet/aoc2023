@@ -192,8 +192,7 @@ pub fn part_two(input: &str) -> Option<u32> {
         add_numbers_to_gear_map(&graph, &mut gear_map, row);
     }
     let sum = gear_map
-        .iter()
-        .map(|item| item.1)
+        .values()
         .filter(|nums| nums.len() == 2)
         .map(|nums| nums[0] * nums[1])
         .sum();
