@@ -19,12 +19,12 @@ impl Item {
         }
     }
 
-    fn is_star(self: &Self) -> bool {
-        if let Item::Symbol('*') = self {
-            true
-        } else {
-            false
-        }
+    fn is_symbol(&self) -> bool {
+        matches!(self, Item::Symbol(_))
+    }
+
+    fn is_star(&self) -> bool {
+        matches!(self, Item::Symbol('*'))
     }
 }
 
@@ -32,44 +32,32 @@ fn has_adjacent_symbol(row: usize, col: usize, graph: &Vec<Vec<Item>>) -> bool {
     let rows = graph.len();
     let cols = graph[0].len();
     if col > 0 {
-        if let Item::Symbol(_) = graph[row][col - 1] {
+        if graph[row][col - 1].is_symbol() {
             return true;
         };
-        if row > 0 {
-            if let Item::Symbol(_) = graph[row - 1][col - 1] {
-                return true;
-            };
+        if row > 0 && graph[row - 1][col - 1].is_symbol() {
+            return true;
         }
-        if row < rows - 1 {
-            if let Item::Symbol(_) = graph[row + 1][col - 1] {
-                return true;
-            };
+        if row < rows - 1 && graph[row + 1][col - 1].is_symbol() {
+            return true;
         }
     }
     if col < cols - 1 {
-        if let Item::Symbol(_) = graph[row][col + 1] {
+        if graph[row][col + 1].is_symbol() {
             return true;
         };
-        if row > 0 {
-            if let Item::Symbol(_) = graph[row - 1][col + 1] {
-                return true;
-            };
+        if row > 0 && graph[row - 1][col + 1].is_symbol() {
+            return true;
         }
-        if row < rows - 1 {
-            if let Item::Symbol(_) = graph[row + 1][col + 1] {
-                return true;
-            };
+        if row < rows - 1 && graph[row + 1][col + 1].is_symbol() {
+            return true;
         }
     }
-    if row > 0 {
-        if let Item::Symbol(_) = graph[row - 1][col] {
-            return true;
-        };
+    if row > 0 && graph[row - 1][col].is_symbol() {
+        return true;
     }
-    if row < rows - 1 {
-        if let Item::Symbol(_) = graph[row + 1][col] {
-            return true;
-        };
+    if row < rows - 1 && graph[row + 1][col].is_symbol() {
+        return true;
     }
     false
 }
@@ -105,7 +93,7 @@ fn get_part_numbers(graph: &Vec<Vec<Item>>, row: usize) -> Vec<u32> {
 pub fn part_one(input: &str) -> Option<u32> {
     let graph: Vec<Vec<Item>> = input
         .lines()
-        .map(|line| line.chars().map(|c| Item::from_char(c)).collect())
+        .map(|line| line.chars().map(Item::from_char).collect())
         .collect();
     let mut sum: u32 = 0;
     for row in 0..graph.len() {
@@ -122,41 +110,29 @@ fn get_adjacent_stars(row: usize, col: usize, graph: &Vec<Vec<Item>>) -> HashSet
         if graph[row][col - 1].is_star() {
             adjacent_stars.insert((row, col - 1));
         };
-        if row > 0 {
-            if graph[row - 1][col - 1].is_star() {
-                adjacent_stars.insert((row - 1, col - 1));
-            };
+        if row > 0 && graph[row - 1][col - 1].is_star() {
+            adjacent_stars.insert((row - 1, col - 1));
         }
-        if row < rows - 1 {
-            if graph[row + 1][col - 1].is_star() {
-                adjacent_stars.insert((row + 1, col - 1));
-            };
+        if row < rows - 1 && graph[row + 1][col - 1].is_star() {
+            adjacent_stars.insert((row + 1, col - 1));
         }
     }
     if col < cols - 1 {
         if graph[row][col + 1].is_star() {
             adjacent_stars.insert((row, col + 1));
         };
-        if row > 0 {
-            if graph[row - 1][col + 1].is_star() {
-                adjacent_stars.insert((row - 1, col + 1));
-            };
+        if row > 0 && graph[row - 1][col + 1].is_star() {
+            adjacent_stars.insert((row - 1, col + 1));
         }
-        if row < rows - 1 {
-            if graph[row + 1][col + 1].is_star() {
-                adjacent_stars.insert((row + 1, col + 1));
-            };
+        if row < rows - 1 && graph[row + 1][col + 1].is_star() {
+            adjacent_stars.insert((row + 1, col + 1));
         }
     }
-    if row > 0 {
-        if graph[row - 1][col].is_star() {
-            adjacent_stars.insert((row - 1, col));
-        };
+    if row > 0 && graph[row - 1][col].is_star() {
+        adjacent_stars.insert((row - 1, col));
     }
-    if row < rows - 1 {
-        if graph[row + 1][col].is_star() {
-            adjacent_stars.insert((row + 1, col));
-        };
+    if row < rows - 1 && graph[row + 1][col].is_star() {
+        adjacent_stars.insert((row + 1, col));
     }
     adjacent_stars
 }
@@ -165,7 +141,7 @@ fn add_numbers_to_gear_map(
     graph: &Vec<Vec<Item>>,
     gear_map: &mut HashMap<(usize, usize), Vec<u32>>,
     row: usize,
-) -> () {
+) {
     let line = &graph[row];
     let mut curr_num = 0;
     let mut adjacent_stars = HashSet::new();
@@ -179,7 +155,7 @@ fn add_numbers_to_gear_map(
                 if curr_num != 0 {
                     adjacent_stars.iter().for_each(|point| {
                         gear_map
-                            .get_mut(&point)
+                            .get_mut(point)
                             .expect("Star points should exist in gear_map")
                             .push(curr_num);
                     });
@@ -192,7 +168,7 @@ fn add_numbers_to_gear_map(
     if curr_num != 0 {
         adjacent_stars.iter().for_each(|point| {
             gear_map
-                .get_mut(&point)
+                .get_mut(point)
                 .expect("Star points should exist in gear_map")
                 .push(curr_num);
         });
@@ -202,7 +178,7 @@ fn add_numbers_to_gear_map(
 pub fn part_two(input: &str) -> Option<u32> {
     let graph: Vec<Vec<Item>> = input
         .lines()
-        .map(|line| line.chars().map(|c| Item::from_char(c)).collect())
+        .map(|line| line.chars().map(Item::from_char).collect())
         .collect();
     let mut gear_map: HashMap<(usize, usize), Vec<u32>> = HashMap::new();
     graph.iter().enumerate().for_each(|(row, line)| {
