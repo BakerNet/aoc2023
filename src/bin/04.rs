@@ -3,29 +3,27 @@ use std::collections::HashSet;
 advent_of_code::solution!(4);
 
 pub fn part_one(input: &str) -> Option<u32> {
-    let rows: Vec<u32> = input
+    let cards: Vec<u32> = input
         .lines()
         .map(|line| {
             let split: Vec<HashSet<u32>> = line
-                .split(":")
+                .split(':')
                 .last()
                 .expect("Should be a string afer :")
-                .split("|")
+                .split('|')
                 .map(|s| {
-                    s.trim()
-                        .split_whitespace()
+                    s.split_whitespace()
                         .map(|ss| ss.parse::<u32>().expect("Should all be numbers"))
                         .collect()
                 })
                 .collect();
-            split
+            split[0].intersection(&split[1]).count().try_into().unwrap()
         })
-        .map(|v| v[0].intersection(&v[1]).count().try_into().unwrap())
         .collect();
-    let sum: u32 = rows
+    let sum: u32 = cards
         .iter()
-        .filter_map(|count| {
-            if *count < 1 {
+        .filter_map(|&count| {
+            if count < 1 {
                 None
             } else {
                 Some(u32::pow(2, count - 1))
@@ -36,33 +34,31 @@ pub fn part_one(input: &str) -> Option<u32> {
 }
 
 pub fn part_two(input: &str) -> Option<u32> {
-    let rows: Vec<u32> = input
+    let cards: Vec<u32> = input
         .lines()
         .map(|line| {
             let split: Vec<HashSet<u32>> = line
-                .split(":")
+                .split(':')
                 .last()
                 .expect("Should be a string afer :")
-                .split("|")
+                .split('|')
                 .map(|s| {
-                    s.trim()
-                        .split_whitespace()
+                    s.split_whitespace()
                         .map(|ss| ss.parse::<u32>().expect("Should all be numbers"))
                         .collect()
                 })
                 .collect();
-            split
+            split[0].intersection(&split[1]).count().try_into().unwrap()
         })
-        .map(|v| v[0].intersection(&v[1]).count().try_into().unwrap())
         .collect();
-    let mut cards_count = vec![1_u32; rows.len()];
-    rows.iter().enumerate().for_each(|(index, num)| {
-        let num = *num;
+    let mut cards_count = vec![1_u32; cards.len()];
+    cards.iter().enumerate().for_each(|(index, &num)| {
+        if num < 1 {
+            return;
+        }
         for _ in 0..cards_count[index] {
-            if num > 0 {
-                for i in 1..=num {
-                    cards_count[index + (i as usize)] += 1;
-                }
+            for i in 1..=num {
+                cards_count[index + (i as usize)] += 1;
             }
         }
     });
