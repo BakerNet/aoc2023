@@ -25,7 +25,6 @@ pub fn part_one(input: &str) -> Option<u32> {
         .split_whitespace()
         .map(|s| str::parse::<u32>(s).expect("Expected seeds to be numbers"))
         .collect();
-    lines.next(); // burn an empty line
 
     let mut section: Vec<(u32, u32, u32)> = Vec::new();
     let transform_seed = |x: u32, section: &Vec<(u32, u32, u32)>| {
@@ -36,6 +35,7 @@ pub fn part_one(input: &str) -> Option<u32> {
         }
         x
     };
+    lines.next(); // burn an empty line
     for line in lines {
         let trimmed = line.trim();
         if trimmed.ends_with(':') {
@@ -70,7 +70,6 @@ pub fn part_two(input: &str) -> Option<u64> {
         .split_whitespace()
         .map(|s| str::parse::<u64>(s).expect("Expected seeds to be numbers"))
         .collect();
-    lines.next(); // burn an empty line
 
     let mut seeds: Vec<(u64, u64)> = seed_nums
         .chunks(2)
@@ -121,6 +120,7 @@ pub fn part_two(input: &str) -> Option<u64> {
         ret.extend(unfound);
         ret
     };
+    lines.next(); // burn an empty line
     for line in lines {
         let trimmed = line.trim();
         if trimmed.ends_with(':') {
