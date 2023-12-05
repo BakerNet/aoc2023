@@ -1,4 +1,18 @@
+use std::ops::{Add, Sub};
+
 advent_of_code::solution!(5);
+
+// Handle unsigned-safe shifting from start to dest for any unsigned int type
+fn unsigned_safe_shift<T>(dest: T, start: T, input: T) -> T
+where
+    T: Ord + Sub<Output = T> + Add<Output = T>,
+{
+    if dest > start {
+        input + (dest - start)
+    } else {
+        input - (start - dest)
+    }
+}
 
 pub fn part_one(input: &str) -> Option<u32> {
     let mut lines = input.lines();
@@ -17,11 +31,7 @@ pub fn part_one(input: &str) -> Option<u32> {
     let transform_seed = |x: u32, section: &Vec<(u32, u32, u32)>| {
         for &(dest, start, range) in section.iter() {
             if x >= start && x < start + range {
-                if dest > start {
-                    return x + (dest - start);
-                } else {
-                    return x - (start - dest);
-                }
+                return unsigned_safe_shift(dest, start, x);
             }
         }
         x
@@ -32,7 +42,7 @@ pub fn part_one(input: &str) -> Option<u32> {
             // skip title
             continue;
         }
-        if trimmed.len() == 0 {
+        if trimmed.is_empty() {
             // end of section - use map
             seeds = seeds.iter().map(|&x| transform_seed(x, &section)).collect();
             section = Vec::new();
@@ -81,12 +91,8 @@ pub fn part_two(input: &str) -> Option<u64> {
             unfound = Vec::new();
             for &(seed_start, seed_range) in searching.iter() {
                 if seed_start >= start && seed_start + seed_range < start + range {
-                    // seed range is inside section range - searching will be drained
-                    if dest > start {
-                        ret.push((seed_start + (dest - start), seed_range));
-                    } else {
-                        ret.push((seed_start - (start - dest), seed_range));
-                    }
+                    // seed range is inside section range - searching done
+                    ret.push((unsigned_safe_shift(dest, start, seed_start), seed_range));
                 } else if start >= seed_start && start + range < seed_start + seed_range {
                     // seed range surrounds section range - searching will be split in two
                     ret.push((dest, range));
@@ -94,27 +100,21 @@ pub fn part_two(input: &str) -> Option<u64> {
                     unfound.push((seed_start, first_unfound_range));
                     unfound.push((start + range, seed_range - range - first_unfound_range));
                 } else if seed_start >= start && seed_start < start + range {
-                    // seed range partially overalps section range on left - searching range will change
+                    // seed range partial overalp  with section range on left - searching range will change
                     let overlap_range = start + range - seed_start;
-                    if dest > start {
-                        ret.push((seed_start + (dest - start), overlap_range));
-                    } else {
-                        ret.push((seed_start - (start - dest), overlap_range));
-                    }
-                    unfound.push((
-                        seed_start + (range - (seed_start - start)),
-                        seed_range - overlap_range,
-                    ));
+                    ret.push((unsigned_safe_shift(dest, start, seed_start), overlap_range));
+                    unfound.push((seed_start + overlap_range, seed_range - overlap_range));
                 } else if start >= seed_start && start < seed_start + seed_range {
-                    // seed range partially overlaps section range on right - searching range will change
+                    // seed range partial overlap with section range on right - searching range will change
                     let overlap_range = seed_start + seed_range - start;
                     ret.push((dest, overlap_range));
                     unfound.push((seed_start, seed_range - overlap_range));
                 } else {
+                    // no overlap
                     unfound.push((seed_start, seed_range));
                 }
             }
-            if unfound.len() == 0 {
+            if unfound.is_empty() {
                 break;
             }
         }
@@ -127,7 +127,7 @@ pub fn part_two(input: &str) -> Option<u64> {
             // skip title
             continue;
         }
-        if trimmed.len() == 0 {
+        if trimmed.is_empty() {
             // end of section - use map
             seeds = seeds.iter().fold(Vec::new(), |mut acc, &x| {
                 acc.extend(transform_seed_range(x, &section));
