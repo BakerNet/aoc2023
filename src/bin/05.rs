@@ -3,14 +3,14 @@ use std::ops::{Add, Range, Sub};
 advent_of_code::solution!(5);
 
 // Handle unsigned-safe shifting from start to dest for any unsigned int type
-fn unsigned_safe_shift<T>(dest: T, start: T, input: T) -> T
+fn unsigned_safe_shift<T>(to_change: T, start: T, dest: T) -> T
 where
     T: Ord + Sub<Output = T> + Add<Output = T>,
 {
     if dest > start {
-        input + (dest - start)
+        to_change + (dest - start)
     } else {
-        input - (start - dest)
+        to_change - (start - dest)
     }
 }
 
@@ -84,15 +84,6 @@ pub fn part_one(input: &str) -> Option<u64> {
         .map(|s| str::parse::<u64>(s).expect("Expected seeds to be numbers"))
         .collect();
 
-    let transform_item = |x: u64, transformer: &Vec<(u64, Range<u64>)>| {
-        for (dest, range) in transformer.iter() {
-            if x >= range.start && x < range.end {
-                return unsigned_safe_shift(*dest, range.start, x);
-            }
-        }
-        x
-    };
-
     lines.next(); // burn an empty line
     let transformers = lines.fold(Vec::new(), |mut acc, line| {
         let trimmed = line.trim();
@@ -118,6 +109,15 @@ pub fn part_one(input: &str) -> Option<u64> {
         }
         acc
     });
+
+    let transform_item = |x: u64, transformer: &Vec<(u64, Range<u64>)>| {
+        for (dest, range) in transformer.iter() {
+            if x >= range.start && x < range.end {
+                return unsigned_safe_shift(x, range.start, *dest);
+            }
+        }
+        x
+    };
     let locations = transformers.iter().fold(seeds, |acc, transformer| {
         acc.iter()
             .map(|&x| transform_item(x, transformer))
@@ -159,8 +159,8 @@ pub fn part_two(input: &str) -> Option<u64> {
                 let (overlapping, non_overlapping) = check_range.subdiv(&transform_range);
                 if let Some(overlapping) = overlapping {
                     returns.push(Range {
-                        start: unsigned_safe_shift(*dest, transform_range.start, overlapping.start),
-                        end: unsigned_safe_shift(*dest, transform_range.start, overlapping.end),
+                        start: unsigned_safe_shift(overlapping.start, transform_range.start, *dest),
+                        end: unsigned_safe_shift(overlapping.end, transform_range.start, *dest),
                     });
                 }
                 if let Some(non_overlapping) = non_overlapping {
