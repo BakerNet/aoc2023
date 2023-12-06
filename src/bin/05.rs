@@ -1,4 +1,4 @@
-use std::ops::{Add, Sub};
+use std::ops::{Add, Range, Sub};
 
 advent_of_code::solution!(5);
 
@@ -14,49 +14,116 @@ where
     }
 }
 
-pub fn part_one(input: &str) -> Option<u32> {
+trait SubDiv
+where
+    Self: Sized,
+{
+    fn subdiv(&self, other: &Self) -> (Option<Self>, Option<Vec<Self>>);
+}
+
+impl<T> SubDiv for Range<T>
+where
+    T: PartialOrd<T> + Copy,
+{
+    fn subdiv(&self, other: &Self) -> (Option<Self>, Option<Vec<Self>>) {
+        if self.start >= other.start && self.end < other.end {
+            // self range is inside other range
+            (Some(self.clone()), None)
+        } else if other.start >= self.start && other.end < self.end {
+            // self range surrounds other range
+            let overlapping_range = Some(other.clone());
+            let non_overlapping = Some(vec![
+                Range {
+                    start: self.start,
+                    end: other.start,
+                },
+                Range {
+                    start: other.end,
+                    end: self.end,
+                },
+            ]);
+            (overlapping_range, non_overlapping)
+        } else if self.start >= other.start && self.start < other.end {
+            // self range partial overalp  with other range on left
+            let overlapping_range = Some(Range {
+                start: self.start,
+                end: other.end,
+            });
+            let non_overlapping = Some(vec![Range {
+                start: other.end,
+                end: self.end,
+            }]);
+            (overlapping_range, non_overlapping)
+        } else if other.start >= self.start && other.start < self.end {
+            // self range partial overlap with other range on right
+            let overlapping_range = Some(Range {
+                start: other.start,
+                end: self.end,
+            });
+            let non_overlapping = Some(vec![Range {
+                start: self.start,
+                end: other.start,
+            }]);
+            (overlapping_range, non_overlapping)
+        } else {
+            // no overlap
+            (None, Some(vec![self.clone()]))
+        }
+    }
+}
+
+pub fn part_one(input: &str) -> Option<u64> {
     let mut lines = input.lines();
-    let mut seeds: Vec<u32> = lines
+    let seeds: Vec<u64> = lines
         .next()
         .expect("There should be at least one line")
         .split(':')
         .last()
         .expect("Expected seeds format")
         .split_whitespace()
-        .map(|s| str::parse::<u32>(s).expect("Expected seeds to be numbers"))
+        .map(|s| str::parse::<u64>(s).expect("Expected seeds to be numbers"))
         .collect();
 
-    let mut section: Vec<(u32, u32, u32)> = Vec::new();
-    let transform_seed = |x: u32, section: &Vec<(u32, u32, u32)>| {
-        for &(dest, start, range) in section.iter() {
-            if x >= start && x < start + range {
-                return unsigned_safe_shift(dest, start, x);
+    let transform_item = |x: u64, transformer: &Vec<(u64, Range<u64>)>| {
+        for (dest, range) in transformer.iter() {
+            if x >= range.start && x < range.end {
+                return unsigned_safe_shift(*dest, range.start, x);
             }
         }
         x
     };
+
     lines.next(); // burn an empty line
-    for line in lines {
+    let transformers = lines.fold(Vec::new(), |mut acc, line| {
         let trimmed = line.trim();
         if trimmed.ends_with(':') {
-            // skip title
-            continue;
-        }
-        if trimmed.is_empty() {
-            // end of section - use map
-            seeds = seeds.iter().map(|&x| transform_seed(x, &section)).collect();
-            section = Vec::new();
+            // start of section
+            acc.push(Vec::new());
+        } else if trimmed.is_empty() {
+            // end of section - do nothing
         } else {
-            // build section maps
-            let trimmed: Vec<u32> = line
+            // add map to section transformer
+            let trimmed: Vec<u64> = line
                 .split_whitespace()
-                .map(|s| str::parse::<u32>(s).expect("Expected maps to all be numbers"))
+                .map(|s| str::parse::<u64>(s).expect("Expected maps to all be numbers"))
                 .collect();
-            section.push((trimmed[0], trimmed[1], trimmed[2]))
+            let len = acc.len();
+            acc[len - 1].push((
+                trimmed[0],
+                Range {
+                    start: trimmed[1],
+                    end: trimmed[1] + trimmed[2],
+                },
+            ))
         }
-    }
-    seeds = seeds.iter().map(|&x| transform_seed(x, &section)).collect();
-    Some(*seeds.iter().min().unwrap())
+        acc
+    });
+    let locations = transformers.iter().fold(seeds, |acc, transformer| {
+        acc.iter()
+            .map(|&x| transform_item(x, transformer))
+            .collect()
+    });
+    Some(*locations.iter().min().unwrap())
 }
 
 pub fn part_two(input: &str) -> Option<u64> {
@@ -71,88 +138,134 @@ pub fn part_two(input: &str) -> Option<u64> {
         .map(|s| str::parse::<u64>(s).expect("Expected seeds to be numbers"))
         .collect();
 
-    let mut seeds: Vec<(u64, u64)> = seed_nums
+    let seeds: Vec<Range<u64>> = seed_nums
         .chunks(2)
         .map(|chunk| {
             let seed_num = chunk[0];
             let range = chunk[1];
-            (seed_num, range)
+            Range {
+                start: seed_num,
+                end: seed_num + range,
+            }
         })
         .collect();
 
-    let mut section: Vec<(u64, u64, u64)> = Vec::new();
-    let transform_seed_range = |x: (u64, u64), section: &Vec<(u64, u64, u64)>| {
-        // println!("Testing ({}, {})", x.0, x.1);
-        let mut ret: Vec<(u64, u64)> = Vec::new();
-        let mut unfound: Vec<(u64, u64)> = vec![x];
-        for &(dest, start, range) in section.iter() {
-            let searching = unfound.clone();
-            unfound = Vec::new();
-            for &(seed_start, seed_range) in searching.iter() {
-                if seed_start >= start && seed_start + seed_range < start + range {
-                    // seed range is inside section range - searching done
-                    ret.push((unsigned_safe_shift(dest, start, seed_start), seed_range));
-                } else if start >= seed_start && start + range < seed_start + seed_range {
-                    // seed range surrounds section range - searching will be split in two
-                    ret.push((dest, range));
-                    let first_unfound_range = start - seed_start;
-                    unfound.push((seed_start, first_unfound_range));
-                    unfound.push((start + range, seed_range - range - first_unfound_range));
-                } else if seed_start >= start && seed_start < start + range {
-                    // seed range partial overalp  with section range on left - searching range will change
-                    let overlap_range = start + range - seed_start;
-                    ret.push((unsigned_safe_shift(dest, start, seed_start), overlap_range));
-                    unfound.push((seed_start + overlap_range, seed_range - overlap_range));
-                } else if start >= seed_start && start < seed_start + seed_range {
-                    // seed range partial overlap with section range on right - searching range will change
-                    let overlap_range = seed_start + seed_range - start;
-                    ret.push((dest, overlap_range));
-                    unfound.push((seed_start, seed_range - overlap_range));
+    let transform_seed_range = |x: Range<u64>, transformer: &Vec<(u64, Range<u64>)>| {
+        let mut returns = Vec::new();
+        let mut searching = vec![x];
+        for (dest, transform_range) in transformer.iter() {
+            let search_clone = searching.clone();
+            for check_range in search_clone.iter() {
+                let (overlapping, non_overlapping) = check_range.subdiv(&transform_range);
+                if let Some(overlapping) = overlapping {
+                    returns.push(Range {
+                        start: unsigned_safe_shift(*dest, transform_range.start, overlapping.start),
+                        end: unsigned_safe_shift(*dest, transform_range.start, overlapping.end),
+                    });
+                }
+                if let Some(non_overlapping) = non_overlapping {
+                    searching = non_overlapping;
                 } else {
-                    // no overlap
-                    unfound.push((seed_start, seed_range));
+                    searching = Vec::new();
                 }
             }
-            if unfound.is_empty() {
+            if searching.is_empty() {
                 break;
             }
         }
-        ret.extend(unfound);
-        ret
+        returns.extend(searching);
+        returns
     };
+
     lines.next(); // burn an empty line
-    for line in lines {
+    let transformers = lines.fold(Vec::new(), |mut acc, line| {
         let trimmed = line.trim();
         if trimmed.ends_with(':') {
-            // skip title
-            continue;
-        }
-        if trimmed.is_empty() {
-            // end of section - use map
-            seeds = seeds.iter().fold(Vec::new(), |mut acc, &x| {
-                acc.extend(transform_seed_range(x, &section));
-                acc
-            });
-            section = Vec::new();
+            // start of section
+            acc.push(Vec::new());
+        } else if trimmed.is_empty() {
+            // end of section - do nothing
         } else {
-            // build section maps
+            // add map to section transformer
             let trimmed: Vec<u64> = line
                 .split_whitespace()
                 .map(|s| str::parse::<u64>(s).expect("Expected maps to all be numbers"))
                 .collect();
-            section.push((trimmed[0], trimmed[1], trimmed[2]))
+            let len = acc.len();
+            acc[len - 1].push((
+                trimmed[0],
+                Range {
+                    start: trimmed[1],
+                    end: trimmed[1] + trimmed[2],
+                },
+            ))
         }
-    }
-    seeds = seeds.iter().fold(Vec::new(), |mut acc, &x| {
-        acc.extend(transform_seed_range(x, &section));
         acc
     });
-    Some(seeds.iter().map(|&x| x.0).min().unwrap())
+    let locations = transformers.iter().fold(seeds, |acc, transformer| {
+        acc.iter().fold(Vec::new(), |mut inner_acc, x| {
+            inner_acc.extend(transform_seed_range(x.clone(), transformer));
+            inner_acc
+        })
+    });
+    Some(locations.iter().map(|x| x.start).min().unwrap())
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn test_subdiv_range() {
+        let range1 = Range { start: 5, end: 10 };
+
+        // self surrounds other
+        let range2 = Range { start: 7, end: 9 };
+        let rest = range1.subdiv(&range2);
+        assert_eq!(rest.0, Some(Range { start: 7, end: 9 }));
+        let Some(non_overlapping) = rest.1 else {
+            panic!("Should be non_overlapping");
+        };
+        assert_eq!(non_overlapping.len(), 2);
+        assert_eq!(non_overlapping[0], Range { start: 5, end: 7 });
+        assert_eq!(non_overlapping[1], Range { start: 9, end: 10 });
+
+        // no overlapping range
+        let range3 = Range { start: 1, end: 5 };
+        let rest = range1.subdiv(&range3);
+        assert_eq!(rest.0, None);
+        let Some(non_overlapping) = rest.1 else {
+            panic!("Should be non_overlapping");
+        };
+        assert_eq!(non_overlapping.len(), 1);
+        assert_eq!(non_overlapping[0], Range { start: 5, end: 10 });
+
+        // overlapping range left
+        let range4 = Range { start: 1, end: 8 };
+        let rest = range1.subdiv(&range4);
+        assert_eq!(rest.0, Some(Range { start: 5, end: 8 }));
+        let Some(non_overlapping) = rest.1 else {
+            panic!("Should be non_overlapping");
+        };
+        assert_eq!(non_overlapping.len(), 1);
+        assert_eq!(non_overlapping[0], Range { start: 8, end: 10 });
+
+        // overlapping range left
+        let range5 = Range { start: 7, end: 15 };
+        let rest = range1.subdiv(&range5);
+        assert_eq!(rest.0, Some(Range { start: 7, end: 10 }));
+        let Some(non_overlapping) = rest.1 else {
+            panic!("Should be non_overlapping");
+        };
+        assert_eq!(non_overlapping.len(), 1);
+        assert_eq!(non_overlapping[0], Range { start: 5, end: 7 });
+
+        // self surrounded by other
+        let range6 = Range { start: 2, end: 15 };
+        let rest = range1.subdiv(&range6);
+        assert_eq!(rest.0, Some(Range { start: 5, end: 10 }));
+        assert_eq!(rest.1, None);
+    }
 
     #[test]
     fn test_part_one() {
