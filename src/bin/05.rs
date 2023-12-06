@@ -150,7 +150,33 @@ pub fn part_two(input: &str) -> Option<u64> {
         })
         .collect();
 
-    let transform_seed_range = |x: Range<u64>, transformer: &Vec<(u64, Range<u64>)>| {
+    lines.next(); // burn an empty line
+    let transformers = lines.fold(Vec::new(), |mut acc, line| {
+        let trimmed = line.trim();
+        if trimmed.ends_with(':') {
+            // start of section
+            acc.push(Vec::new());
+        } else if trimmed.is_empty() {
+            // end of section - do nothing
+        } else {
+            // add map to section transformer
+            let trimmed: Vec<u64> = line
+                .split_whitespace()
+                .map(|s| str::parse::<u64>(s).expect("Expected maps to all be numbers"))
+                .collect();
+            let len = acc.len();
+            acc[len - 1].push((
+                trimmed[0],
+                Range {
+                    start: trimmed[1],
+                    end: trimmed[1] + trimmed[2],
+                },
+            ))
+        }
+        acc
+    });
+
+    let transform_range = |x: Range<u64>, transformer: &Vec<(u64, Range<u64>)>| {
         let mut returns = Vec::new();
         let mut searching = vec![x];
         for (dest, transform_range) in transformer.iter() {
@@ -177,34 +203,9 @@ pub fn part_two(input: &str) -> Option<u64> {
         returns
     };
 
-    lines.next(); // burn an empty line
-    let transformers = lines.fold(Vec::new(), |mut acc, line| {
-        let trimmed = line.trim();
-        if trimmed.ends_with(':') {
-            // start of section
-            acc.push(Vec::new());
-        } else if trimmed.is_empty() {
-            // end of section - do nothing
-        } else {
-            // add map to section transformer
-            let trimmed: Vec<u64> = line
-                .split_whitespace()
-                .map(|s| str::parse::<u64>(s).expect("Expected maps to all be numbers"))
-                .collect();
-            let len = acc.len();
-            acc[len - 1].push((
-                trimmed[0],
-                Range {
-                    start: trimmed[1],
-                    end: trimmed[1] + trimmed[2],
-                },
-            ))
-        }
-        acc
-    });
     let locations = transformers.iter().fold(seeds, |acc, transformer| {
         acc.iter().fold(Vec::new(), |mut inner_acc, x| {
-            inner_acc.extend(transform_seed_range(x.clone(), transformer));
+            inner_acc.extend(transform_range(x.clone(), transformer));
             inner_acc
         })
     });
