@@ -1,30 +1,24 @@
 advent_of_code::solution!(6);
 
-pub fn part_one(input: &str) -> Option<u32> {
-    let mut lines = input.lines();
-    let times: Vec<u32> = lines
-        .next()
-        .expect("There should be a first line")
-        .split(':')
+fn extract_vec(s: &str) -> Vec<u32> {
+    s.split(':')
         .last()
         .expect("There should be a :")
         .split_whitespace()
         .map(|s| s.parse::<u32>().expect("Times should be numbers"))
-        .collect();
-    let records: Vec<u32> = lines
-        .next()
-        .expect("There should be a second line")
-        .split(':')
-        .last()
-        .expect("There should be a :")
-        .split_whitespace()
-        .map(|s| s.parse::<u32>().expect("Records should be numbers"))
-        .collect();
+        .collect()
+}
+
+pub fn part_one(input: &str) -> Option<u32> {
+    let mut lines = input.lines();
+    let times: Vec<u32> = extract_vec(lines.next().expect("There should be a first line"));
+    let records: Vec<u32> = extract_vec(lines.next().expect("There should be a second line"));
     times
         .iter()
         .zip(records.iter())
         .map(|(&time, &record)| {
             let mut x = 1;
+            // optimize with binary search instead linear search
             let winning = loop {
                 if x * (time - x) > record {
                     break x;
@@ -36,29 +30,22 @@ pub fn part_one(input: &str) -> Option<u32> {
         .reduce(|acc, x| acc * x)
 }
 
+fn extract_num(s: &str) -> u64 {
+    s.split(':')
+        .last()
+        .expect("There should be a :")
+        .split_whitespace()
+        .fold(String::new(), |acc, s| acc + s)
+        .parse::<u64>()
+        .expect("Records should be numbers")
+}
+
 pub fn part_two(input: &str) -> Option<u64> {
     let mut lines = input.lines();
-    let time: u64 = lines
-        .next()
-        .expect("There should be a first line")
-        .split(':')
-        .last()
-        .expect("There should be a :")
-        .split_whitespace()
-        .fold(String::new(), |acc, s| acc + s)
-        .parse::<u64>()
-        .expect("Records should be numbers");
-    let record: u64 = lines
-        .next()
-        .expect("There should be a second line")
-        .split(':')
-        .last()
-        .expect("There should be a :")
-        .split_whitespace()
-        .fold(String::new(), |acc, s| acc + s)
-        .parse::<u64>()
-        .expect("Records should be numbers");
+    let time: u64 = extract_num(lines.next().expect("There should be a first line"));
+    let record: u64 = extract_num(lines.next().expect("There should be a second line"));
     let mut x = 1;
+    // optimize with binary search instead linear search
     let winning = loop {
         if x * (time - x) > record {
             break x;
