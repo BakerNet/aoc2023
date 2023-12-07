@@ -182,7 +182,7 @@ pub fn part_two(input: &str) -> Option<u64> {
         for (dest, transform_range) in transformer.iter() {
             let search_clone = searching.clone();
             for check_range in search_clone.iter() {
-                let (overlapping, non_overlapping) = check_range.subdiv(&transform_range);
+                let (overlapping, non_overlapping) = check_range.subdiv(transform_range);
                 if let Some(overlapping) = overlapping {
                     returns.push(Range {
                         start: unsigned_safe_shift(overlapping.start, transform_range.start, *dest),

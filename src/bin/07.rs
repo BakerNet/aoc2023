@@ -41,7 +41,7 @@ impl Hand {
             let j = groups.remove(&'J').unwrap();
             let max_item = groups
                 .iter()
-                .max_by(|a, b| a.1.cmp(&b.1))
+                .max_by(|a, b| a.1.cmp(b.1))
                 .expect("There should be a max in groups for J logic")
                 .0;
             groups.entry(*max_item).and_modify(|x| *x += j);

@@ -7,12 +7,11 @@ fn get_lower_race_quadratic(time: u64, record: u64) -> u64 {
     let delta_sq_u64 = delta_sq as u64;
     let root = (time - delta_sq_u64) / 2;
     // usually root + 1, but sometimes off
-    let winning = if root * (time - root) > record {
+    if root * (time - root) > record {
         root
     } else {
         root + 1
-    };
-    winning
+    }
 }
 
 fn extract_vec(s: &str) -> Vec<u64> {
