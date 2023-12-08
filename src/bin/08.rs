@@ -1,7 +1,6 @@
 use std::collections::HashMap;
 
 use regex::Regex;
-use ringbuffer::{AllocRingBuffer, RingBuffer};
 
 advent_of_code::solution!(8);
 
@@ -33,30 +32,30 @@ fn find_starting_locations(lines: Vec<&str>) -> Vec<String> {
         .collect()
 }
 
-pub fn part_one(input: &str) -> Option<u32> {
+pub fn part_one(input: &str) -> Option<u64> {
     let mut lines = input.lines();
     let instructions: Vec<char> = lines.next().unwrap().chars().collect();
-    let mut instructions_iter = instructions.iter();
     lines.next(); // burn empty line
-    let mut buffer = AllocRingBuffer::new(instructions.len());
-    buffer.fill_with(|| instructions_iter.next().unwrap());
+
     let map = build_map(lines.collect());
+
     let mut curr = String::from("AAA");
-    let mut count = 0;
-    while curr != "ZZZ" {
-        let instruction = buffer.dequeue().expect("Should always get an instruction");
+    let mut count_path: Option<u64> = None;
+    for (count, instruction) in instructions.iter().cycle().enumerate() {
         let curr_tuple = map
             .get(&curr)
             .unwrap_or_else(|| panic!("Should find {} in map", curr));
-        match instruction {
-            'L' => curr = curr_tuple.0.clone(),
-            'R' => curr = curr_tuple.1.clone(),
-            default => panic!("Should get {}", default),
+        curr = if *instruction == 'L' {
+            curr_tuple.0.clone()
+        } else {
+            curr_tuple.1.clone()
+        };
+        if curr == "ZZZ" {
+            count_path = Some(count as u64 + 1);
+            break;
         }
-        buffer.enqueue(instruction);
-        count += 1;
     }
-    Some(count)
+    count_path
 }
 
 pub fn lcm(nums: &[u64]) -> u64 {
@@ -78,53 +77,37 @@ fn gcd_of_two_numbers(a: u64, b: u64) -> u64 {
 pub fn part_two(input: &str) -> Option<u64> {
     let mut lines = input.lines();
     let instructions: Vec<char> = lines.next().unwrap().chars().collect();
-    let mut instructions_iter = instructions.iter();
+
     lines.next(); // burn empty line
-    let mut buffer = AllocRingBuffer::new(instructions.len());
-    buffer.fill_with(|| instructions_iter.next().unwrap());
     let lines: Vec<&str> = lines.collect();
+
     let map = build_map(lines.clone());
+
     let mut currs = find_starting_locations(lines);
     let mut counts_per_path: Vec<Option<u64>> = vec![None; currs.len()];
-    let mut count = 0;
-    while counts_per_path.iter().filter(|i| i.is_none()).count() != 0 {
-        // println!("{} > {:?}", count, currs);
-        let instruction = buffer.dequeue().expect("Should always get an instruction");
+    for (count, instruction) in instructions.iter().cycle().enumerate() {
         let curr_tuples: Vec<&(String, String)> = currs
             .iter()
             .map(|loc| map.get(loc).expect(&format!("Should find {} in map", loc)))
             .collect();
-        match instruction {
-            'L' => {
-                currs = curr_tuples
-                    .iter()
-                    .enumerate()
-                    .map(|(index, loc_tup)| {
-                        let next = loc_tup.0.to_owned();
-                        if next.ends_with('Z') && counts_per_path[index].is_none() {
-                            counts_per_path[index] = Some(count + 1);
-                        }
-                        next
-                    })
-                    .collect()
-            }
-            'R' => {
-                currs = curr_tuples
-                    .iter()
-                    .enumerate()
-                    .map(|(index, loc_tup)| {
-                        let next = loc_tup.1.to_owned();
-                        if next.ends_with('Z') && counts_per_path[index].is_none() {
-                            counts_per_path[index] = Some(count + 1);
-                        }
-                        next
-                    })
-                    .collect()
-            }
-            default => panic!("Should get {}", default),
+        currs = curr_tuples
+            .iter()
+            .enumerate()
+            .map(|(index, loc_tup)| {
+                let next = if *instruction == 'L' {
+                    loc_tup.0.to_owned()
+                } else {
+                    loc_tup.1.to_owned()
+                };
+                if next.ends_with('Z') && counts_per_path[index].is_none() {
+                    counts_per_path[index] = Some(count as u64 + 1);
+                }
+                next
+            })
+            .collect();
+        if !counts_per_path.iter().any(|i| i.is_none()) {
+            break;
         }
-        buffer.enqueue(instruction);
-        count += 1;
     }
     let iters_found: Vec<u64> = counts_per_path.iter().map(|x| x.unwrap()).collect();
     let lcm = lcm(&iters_found);
