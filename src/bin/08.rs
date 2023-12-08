@@ -18,13 +18,13 @@ fn build_map(lines: Vec<&str>) -> HashMap<String, (String, String)> {
         .collect()
 }
 
-fn find_starting_locations(lines: Vec<&str>) -> Vec<String> {
+fn find_starting_locations(lines: Vec<&str>) -> Vec<&str> {
     lines
         .iter()
         .filter_map(|&line| {
             let item = line.split_whitespace().next().unwrap();
             if item.ends_with('A') {
-                Some(item.to_owned())
+                Some(item)
             } else {
                 None
             }
@@ -39,16 +39,16 @@ pub fn part_one(input: &str) -> Option<u64> {
 
     let map = build_map(lines.collect());
 
-    let mut curr = String::from("AAA");
+    let mut curr = "AAA";
     let mut count_path: Option<u64> = None;
     for (count, instruction) in instructions.iter().cycle().enumerate() {
         let curr_tuple = map
-            .get(&curr)
+            .get(curr)
             .unwrap_or_else(|| panic!("Should find {} in map", curr));
         curr = if *instruction == 'L' {
-            curr_tuple.0.clone()
+            &curr_tuple.0
         } else {
-            curr_tuple.1.clone()
+            &curr_tuple.1
         };
         if curr == "ZZZ" {
             count_path = Some(count as u64 + 1);
@@ -88,21 +88,21 @@ pub fn part_two(input: &str) -> Option<u64> {
     for (count, instruction) in instructions.iter().cycle().enumerate() {
         let curr_tuples: Vec<&(String, String)> = currs
             .iter()
-            .map(|loc| map.get(loc).expect(&format!("Should find {} in map", loc)))
+            .map(|&loc| map.get(loc).expect(&format!("Should find {} in map", loc)))
             .collect();
         currs = curr_tuples
             .iter()
             .enumerate()
             .map(|(index, loc_tup)| {
                 let next = if *instruction == 'L' {
-                    loc_tup.0.to_owned()
+                    &loc_tup.0
                 } else {
-                    loc_tup.1.to_owned()
+                    &loc_tup.1
                 };
                 if next.ends_with('Z') && counts_per_path[index].is_none() {
                     counts_per_path[index] = Some(count as u64 + 1);
                 }
-                next
+                next as &str
             })
             .collect();
         if !counts_per_path.iter().any(|i| i.is_none()) {
