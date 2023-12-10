@@ -1,4 +1,7 @@
-use std::collections::{HashSet, VecDeque};
+use std::{
+    cmp::Ordering,
+    collections::{HashSet, VecDeque},
+};
 
 advent_of_code::solution!(10);
 
@@ -12,23 +15,21 @@ enum Direction {
 
 impl Direction {
     fn from_indices(from: (usize, usize), to: (usize, usize)) -> Self {
-        if from.0 == to.0 {
-            if from.1 < to.1 {
-                Self::East
-            } else {
-                Self::West
+        match from.0.cmp(&to.0) {
+            Ordering::Equal => {
+                if from.1 < to.1 {
+                    Self::East
+                } else {
+                    Self::West
+                }
             }
-        } else {
-            if from.0 > to.0 {
-                Self::North
-            } else {
-                Self::South
-            }
+            Ordering::Greater => Self::North,
+            Ordering::Less => Self::South,
         }
     }
 }
 
-fn neighbors(graph: &Vec<Vec<char>>, of: (usize, usize)) -> Vec<(usize, usize)> {
+fn neighbors(graph: &[Vec<char>], of: (usize, usize)) -> Vec<(usize, usize)> {
     let mut neighbors = Vec::new();
     let row = of.0;
     let col = of.1;
@@ -61,7 +62,7 @@ fn neighbors(graph: &Vec<Vec<char>>, of: (usize, usize)) -> Vec<(usize, usize)> 
     neighbors
 }
 
-fn find_start(graph: &Vec<Vec<char>>) -> (usize, usize) {
+fn find_start(graph: &[Vec<char>]) -> (usize, usize) {
     let mut start: (usize, usize) = (0, 0);
     'outer: for (x, v) in graph.iter().enumerate() {
         for (y, c) in v.iter().enumerate() {
@@ -138,7 +139,7 @@ fn is_connected(direction: Direction, tile: char) -> bool {
     }
 }
 
-fn find_loop(graph: &Vec<Vec<char>>, start: (usize, usize)) -> Vec<(usize, usize)> {
+fn find_loop(graph: &[Vec<char>], start: (usize, usize)) -> Vec<(usize, usize)> {
     for neighbor in neighbors(graph, start) {
         let mut path = vec![start, neighbor];
         let mut curr = start;
@@ -160,7 +161,7 @@ fn find_loop(graph: &Vec<Vec<char>>, start: (usize, usize)) -> Vec<(usize, usize
     Vec::new()
 }
 
-fn find_loop_len(graph: &Vec<Vec<char>>, start: (usize, usize)) -> usize {
+fn find_loop_len(graph: &[Vec<char>], start: (usize, usize)) -> usize {
     find_loop(graph, start).len()
 }
 
@@ -292,7 +293,7 @@ impl Handedness {
     }
 }
 
-fn find_handedness(graph: &Vec<Vec<char>>, graph_loop: &Vec<(usize, usize)>) -> Handedness {
+fn find_handedness(graph: &[Vec<char>], graph_loop: &[(usize, usize)]) -> Handedness {
     if graph_loop.contains(&(0, 0)) {
         return Handedness::from_origin_and_direction(
             graph_loop
@@ -315,9 +316,8 @@ fn find_handedness(graph: &Vec<Vec<char>>, graph_loop: &Vec<(usize, usize)>) -> 
         let curr_neighbors = neighbors(graph, curr);
         curr_neighbors.iter().for_each(|index| {
             if seen.contains(index) {
-                return;
             } else {
-                queue.push_back(index.clone());
+                queue.push_back(*index);
             }
         });
         seen.insert(curr);
@@ -344,7 +344,7 @@ fn find_handedness(graph: &Vec<Vec<char>>, graph_loop: &Vec<(usize, usize)>) -> 
 }
 
 fn dfs_count(
-    graph: &Vec<Vec<char>>,
+    graph: &[Vec<char>],
     index: (usize, usize),
     seen: &mut HashSet<(usize, usize)>,
 ) -> usize {
@@ -356,11 +356,10 @@ fn dfs_count(
         let curr_neighbors = neighbors(graph, curr);
         curr_neighbors.iter().for_each(|index| {
             if seen.contains(index) {
-                return;
             } else {
                 count += 1;
-                seen.insert(index.clone());
-                queue.push_back(index.clone());
+                seen.insert(*index);
+                queue.push_back(*index);
             }
         });
     }
@@ -382,7 +381,7 @@ pub fn part_two(input: &str) -> Option<u64> {
                     if seen.contains(idx) {
                         return false;
                     }
-                    seen.insert(idx.clone());
+                    seen.insert(*idx);
                     Handedness::from_neighbor_and_direction(
                         v[1],
                         graph[v[1].0][v[1].1],
