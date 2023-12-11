@@ -61,15 +61,6 @@ impl Direction {
             _ => false,
         }
     }
-
-    fn opposite(self) -> Self {
-        match self {
-            Self::North => Self::South,
-            Self::South => Self::North,
-            Self::East => Self::West,
-            Self::West => Self::East,
-        }
-    }
 }
 
 fn neighbors(graph: &[Vec<char>], of: (usize, usize)) -> Vec<(usize, usize)> {
@@ -231,10 +222,8 @@ pub fn part_two(input: &str) -> Option<u64> {
                 if matches!(dirs.0, Direction::North) {
                     inside = !inside;
                 }
-            } else {
-                if inside {
-                    count += 1;
-                }
+            } else if inside {
+                count += 1;
             }
         }
     }
