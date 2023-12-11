@@ -346,7 +346,7 @@ fn find_handedness(graph: &[Vec<char>], graph_loop: &[(usize, usize)]) -> Handed
     )
 }
 
-fn dfs_count(
+fn bfs_count(
     graph: &[Vec<char>],
     index: (usize, usize),
     seen: &mut HashSet<(usize, usize)>,
@@ -395,7 +395,7 @@ pub fn part_two(input: &str) -> Option<u64> {
                 .collect();
             filtered_neighbors
                 .iter()
-                .map(|&idx| dfs_count(&graph, *idx, &mut seen))
+                .map(|&idx| bfs_count(&graph, *idx, &mut seen))
                 .sum::<usize>()
         })
         .sum();
