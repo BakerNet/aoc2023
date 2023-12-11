@@ -52,10 +52,8 @@ fn find_empty_cols(graph: &[Vec<char>]) -> Vec<usize> {
     empty_cols
 }
 
-pub fn part_one(input: &str) -> Option<u64> {
-    let graph: Vec<Vec<char>> = input.lines().map(|line| line.chars().collect()).collect();
-    let empty_cols = find_empty_cols(&graph);
-    let empty_rows: Vec<usize> = graph
+fn find_empty_rows(graph: &[Vec<char>]) -> Vec<usize> {
+    graph
         .iter()
         .enumerate()
         .filter_map(|(row, row_vec)| {
@@ -65,8 +63,11 @@ pub fn part_one(input: &str) -> Option<u64> {
                 None
             }
         })
-        .collect();
-    let galaxies = graph
+        .collect()
+}
+
+fn find_galaxies(graph: &[Vec<char>]) -> Vec<(usize, usize)> {
+    graph
         .iter()
         .enumerate()
         .fold(Vec::new(), |mut acc, (row, row_vec)| {
@@ -76,17 +77,31 @@ pub fn part_one(input: &str) -> Option<u64> {
                 .filter(|&(_, c)| *c == '#')
                 .for_each(|(col, _)| acc.push((row, col)));
             acc
-        });
-    let mut galaxy_pairs = Vec::new();
-    for (x, g1) in galaxies.iter().enumerate() {
-        for g2 in galaxies.iter().skip(x + 1) {
-            galaxy_pairs.push((g1, g2));
-        }
-    }
+        })
+}
+
+fn galaxy_pairs(galaxies: &[(usize, usize)]) -> Vec<((usize, usize), (usize, usize))> {
+    galaxies
+        .iter()
+        .enumerate()
+        .fold(Vec::new(), |mut acc, (x, g1)| {
+            galaxies.iter().skip(x + 1).for_each(|g2| {
+                acc.push((*g1, *g2));
+            });
+            acc
+        })
+}
+
+pub fn part_one(input: &str) -> Option<u64> {
+    let graph: Vec<Vec<char>> = input.lines().map(|line| line.chars().collect()).collect();
+    let empty_cols = find_empty_cols(&graph);
+    let empty_rows = find_empty_rows(&graph);
+    let galaxies = find_galaxies(&graph);
+    let galaxy_pairs = galaxy_pairs(&galaxies);
     Some(
         galaxy_pairs
             .iter()
-            .map(|&(g1, g2)| dist_with_expansion(*g1, *g2, &empty_rows, &empty_cols, 2))
+            .map(|&(g1, g2)| dist_with_expansion(g1, g2, &empty_rows, &empty_cols, 2))
             .sum(),
     )
 }
@@ -94,38 +109,13 @@ pub fn part_one(input: &str) -> Option<u64> {
 pub fn part_two(input: &str) -> Option<u64> {
     let graph: Vec<Vec<char>> = input.lines().map(|line| line.chars().collect()).collect();
     let empty_cols = find_empty_cols(&graph);
-    let empty_rows: Vec<usize> = graph
-        .iter()
-        .enumerate()
-        .filter_map(|(row, row_vec)| {
-            if !row_vec.contains(&'#') {
-                Some(row)
-            } else {
-                None
-            }
-        })
-        .collect();
-    let galaxies = graph
-        .iter()
-        .enumerate()
-        .fold(Vec::new(), |mut acc, (row, row_vec)| {
-            row_vec
-                .iter()
-                .enumerate()
-                .filter(|&(_, c)| *c == '#')
-                .for_each(|(col, _)| acc.push((row, col)));
-            acc
-        });
-    let mut galaxy_pairs = Vec::new();
-    for (x, g1) in galaxies.iter().enumerate() {
-        for g2 in galaxies.iter().skip(x + 1) {
-            galaxy_pairs.push((g1, g2));
-        }
-    }
+    let empty_rows = find_empty_rows(&graph);
+    let galaxies = find_galaxies(&graph);
+    let galaxy_pairs = galaxy_pairs(&galaxies);
     Some(
         galaxy_pairs
             .iter()
-            .map(|&(g1, g2)| dist_with_expansion(*g1, *g2, &empty_rows, &empty_cols, 1_000_000))
+            .map(|&(g1, g2)| dist_with_expansion(g1, g2, &empty_rows, &empty_cols, 1_000_000))
             .sum(),
     )
 }
