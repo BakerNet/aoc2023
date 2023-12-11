@@ -1,7 +1,4 @@
-use std::{
-    cmp::Ordering,
-    collections::{HashSet, VecDeque},
-};
+use std::{cmp::Ordering, collections::HashMap};
 
 advent_of_code::solution!(10);
 
@@ -25,6 +22,52 @@ impl Direction {
             }
             Ordering::Greater => Self::North,
             Ordering::Less => Self::South,
+        }
+    }
+
+    fn from_tile(tile: char) -> (Self, Self) {
+        match tile {
+            '|' => (Self::North, Self::South),
+            '-' => (Self::East, Self::West),
+            'L' => (Self::North, Self::East),
+            'J' => (Self::North, Self::West),
+            '7' => (Self::South, Self::West),
+            'F' => (Self::South, Self::East),
+            _ => panic!("Unknown tiles"),
+        }
+    }
+
+    fn to_tile(self, dir: Self) -> char {
+        match (self, dir) {
+            (Self::North, Self::South) | (Self::South, Self::North) => '|',
+            (Self::East, Self::West) | (Self::West, Self::East) => '-',
+            (Self::North, Self::East) | (Self::East, Self::North) => 'L',
+            (Self::North, Self::West) | (Self::West, Self::North) => 'J',
+            (Self::South, Self::West) | (Self::West, Self::South) => '7',
+            (Self::South, Self::East) | (Self::East, Self::South) => 'F',
+            _ => panic!("Impossible combo of directions"),
+        }
+    }
+
+    fn is_connected(&self, tile: char) -> bool {
+        match tile {
+            '|' => matches!(self, Self::North | Self::South),
+            '-' => matches!(self, Self::East | Self::West),
+            'L' => matches!(self, Self::South | Self::West),
+            'J' => matches!(self, Self::South | Self::East),
+            '7' => matches!(self, Self::North | Self::East),
+            'F' => matches!(self, Self::North | Self::West),
+            'S' => true,
+            _ => false,
+        }
+    }
+
+    fn opposite(self) -> Self {
+        match self {
+            Self::North => Self::South,
+            Self::South => Self::North,
+            Self::East => Self::West,
+            Self::West => Self::East,
         }
     }
 }
@@ -76,7 +119,7 @@ fn find_start(graph: &[Vec<char>]) -> (usize, usize) {
 }
 
 fn next_in_loop(direction: Direction, tile: char, index: (usize, usize)) -> Option<(usize, usize)> {
-    if !is_connected(direction, tile) {
+    if !direction.is_connected(tile) {
         return None;
     }
     match tile {
@@ -126,19 +169,6 @@ fn next_in_loop(direction: Direction, tile: char, index: (usize, usize)) -> Opti
     }
 }
 
-fn is_connected(direction: Direction, tile: char) -> bool {
-    match tile {
-        '|' => matches!(direction, Direction::North | Direction::South),
-        '-' => matches!(direction, Direction::East | Direction::West),
-        'L' => matches!(direction, Direction::South | Direction::West),
-        'J' => matches!(direction, Direction::South | Direction::East),
-        '7' => matches!(direction, Direction::North | Direction::East),
-        'F' => matches!(direction, Direction::North | Direction::West),
-        'S' => true,
-        _ => false,
-    }
-}
-
 fn find_loop(graph: &[Vec<char>], start: (usize, usize)) -> Vec<(usize, usize)> {
     for neighbor in neighbors(graph, start) {
         let mut path = vec![start, neighbor];
@@ -171,232 +201,44 @@ pub fn part_one(input: &str) -> Option<u64> {
     Some(length / 2 + length % 2)
 }
 
-#[derive(Debug, PartialEq, Eq)]
-enum Handedness {
-    Right,
-    Left,
-}
-
-impl Handedness {
-    fn from_neighbor_and_direction(
-        index: (usize, usize),
-        tile: char,
-        neighbor: (usize, usize),
-        direction: Direction,
-    ) -> Self {
-        match direction {
-            Direction::North => match tile {
-                '|' => {
-                    if neighbor.1 > index.1 {
-                        Self::Right
-                    } else {
-                        Self::Left
-                    }
-                }
-                '7' => {
-                    if neighbor.0 < index.0 || neighbor.1 > index.1 {
-                        Self::Right
-                    } else {
-                        Self::Left
-                    }
-                }
-                'F' => {
-                    if neighbor.0 < index.0 || neighbor.1 < index.1 {
-                        Self::Left
-                    } else {
-                        Self::Right
-                    }
-                }
-                _ => panic!("Unexpected tile"),
-            },
-            Direction::South => match tile {
-                '|' => {
-                    if neighbor.1 < index.1 {
-                        Self::Right
-                    } else {
-                        Self::Left
-                    }
-                }
-                'L' => {
-                    if neighbor.0 > index.0 || neighbor.1 < index.1 {
-                        Self::Right
-                    } else {
-                        Self::Left
-                    }
-                }
-                'J' => {
-                    if neighbor.0 > index.0 || neighbor.1 > index.1 {
-                        Self::Left
-                    } else {
-                        Self::Right
-                    }
-                }
-                _ => panic!("Unexpected tile"),
-            },
-            Direction::East => match tile {
-                '-' => {
-                    if neighbor.0 > index.0 {
-                        Self::Right
-                    } else {
-                        Self::Left
-                    }
-                }
-                '7' => {
-                    if neighbor.0 < index.0 || neighbor.1 > index.1 {
-                        Self::Left
-                    } else {
-                        Self::Right
-                    }
-                }
-                'J' => {
-                    if neighbor.0 > index.0 || neighbor.1 > index.1 {
-                        Self::Right
-                    } else {
-                        Self::Left
-                    }
-                }
-                _ => panic!("Unexpected tile"),
-            },
-            Direction::West => match tile {
-                '-' => {
-                    if neighbor.0 > index.0 {
-                        Self::Left
-                    } else {
-                        Self::Right
-                    }
-                }
-                'L' => {
-                    if neighbor.0 > index.0 || neighbor.1 < index.1 {
-                        Self::Left
-                    } else {
-                        Self::Right
-                    }
-                }
-                'F' => {
-                    if neighbor.0 < index.0 || neighbor.1 < index.1 {
-                        Self::Right
-                    } else {
-                        Self::Left
-                    }
-                }
-                _ => panic!("Unexpected tile"),
-            },
-        }
-    }
-
-    fn from_origin_and_direction(direction: Direction) -> Self {
-        match direction {
-            Direction::North => Self::Left,
-            Direction::West => Self::Right,
-            _ => panic!("Impossible direction when reaching origin"),
-        }
-    }
-}
-
-fn find_handedness(graph: &[Vec<char>], graph_loop: &[(usize, usize)]) -> Handedness {
-    if graph_loop.contains(&(0, 0)) {
-        return Handedness::from_origin_and_direction(
-            graph_loop
-                .windows(2)
-                .find_map(|v| {
-                    if v[1] == (0, 0) {
-                        Some(Direction::from_indices(v[0], v[1]))
-                    } else {
-                        None
-                    }
-                })
-                .unwrap(),
-        );
-    }
-    let mut from = (0, 0);
-    let mut curr = (0, 0);
-    let mut queue = VecDeque::new();
-    let mut seen = HashSet::new();
-    while !graph_loop.contains(&curr) {
-        let curr_neighbors = neighbors(graph, curr);
-        curr_neighbors.iter().for_each(|index| {
-            if seen.contains(index) {
-            } else {
-                queue.push_back(*index);
-            }
-        });
-        seen.insert(curr);
-        from = curr;
-        curr = queue
-            .pop_back()
-            .expect("Shouldn't ever empty queue find_handedness BFS");
-    }
-    Handedness::from_neighbor_and_direction(
-        curr,
-        graph[curr.0][curr.1],
-        from,
-        graph_loop
-            .windows(2)
-            .find_map(|v| {
-                if v[1] == (curr.0, curr.1) {
-                    Some(Direction::from_indices(v[0], v[1]))
-                } else {
-                    None
-                }
-            })
-            .unwrap(),
-    )
-}
-
-fn dfs_count(
-    graph: &[Vec<char>],
-    index: (usize, usize),
-    seen: &mut HashSet<(usize, usize)>,
-) -> usize {
-    let mut count = 1;
-    let mut queue = VecDeque::new();
-    queue.push_back(index);
-    while !queue.is_empty() {
-        let curr = queue.pop_front().unwrap();
-        let curr_neighbors = neighbors(graph, curr);
-        curr_neighbors.iter().for_each(|index| {
-            if seen.contains(index) {
-            } else {
-                count += 1;
-                seen.insert(*index);
-                queue.push_back(*index);
-            }
-        });
-    }
-    count
+fn determine_tile(
+    origin: (usize, usize),
+    neighbor1: (usize, usize),
+    neighbor2: (usize, usize),
+) -> char {
+    let dir1 = Direction::from_indices(origin, neighbor1);
+    let dir2 = Direction::from_indices(origin, neighbor2);
+    dir1.to_tile(dir2)
 }
 
 pub fn part_two(input: &str) -> Option<u64> {
     let graph: Vec<Vec<char>> = input.lines().map(|line| line.chars().collect()).collect();
-    let graph_loop = find_loop(&graph, find_start(&graph));
-    let handedness = find_handedness(&graph, &graph_loop);
-    let mut seen: HashSet<(usize, usize)> = graph_loop.iter().cloned().collect();
-    let indices: usize = graph_loop
-        .windows(2)
-        .map(|v| {
-            let index_neighbors = neighbors(&graph, v[1]);
-            let filtered_neighbors: Vec<&(usize, usize)> = index_neighbors
-                .iter()
-                .filter(|&idx| {
-                    if seen.contains(idx) {
-                        return false;
-                    }
-                    seen.insert(*idx);
-                    Handedness::from_neighbor_and_direction(
-                        v[1],
-                        graph[v[1].0][v[1].1],
-                        *idx,
-                        Direction::from_indices(v[0], v[1]),
-                    ) != handedness
-                })
-                .collect();
-            filtered_neighbors
-                .iter()
-                .map(|&idx| dfs_count(&graph, *idx, &mut seen))
-                .sum::<usize>()
-        })
-        .sum();
-    Some(indices as u64)
+    let start = find_start(&graph);
+    let graph_loop = find_loop(&graph, start);
+    let mut graph = graph;
+    graph[start.0][start.1] =
+        determine_tile(start, graph_loop[1], graph_loop[graph_loop.len() - 1]);
+    let seen: HashMap<(usize, usize), (Direction, Direction)> = graph_loop
+        .iter()
+        .cloned()
+        .map(|index| (index, Direction::from_tile(graph[index.0][index.1])))
+        .collect();
+    let mut count = 0;
+    for (x, row) in graph.iter().enumerate() {
+        let mut inside = false;
+        for (y, _) in row.iter().enumerate() {
+            if let Some(dirs) = seen.get(&(x, y)) {
+                if matches!(dirs.0, Direction::North) {
+                    inside = !inside;
+                }
+            } else {
+                if inside {
+                    count += 1;
+                }
+            }
+        }
+    }
+    Some(count as u64)
 }
 
 #[cfg(test)]
