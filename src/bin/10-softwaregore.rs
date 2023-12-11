@@ -1,3 +1,6 @@
+// NOTE:  This was my actual working implementation when Day 10 dropped
+// ... I was on 4 hours of sleep and it was past 1AM when I finished
+
 use std::{
     cmp::Ordering,
     collections::{HashSet, VecDeque},
