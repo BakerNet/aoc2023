@@ -56,7 +56,7 @@ fn parse_record(line: &str) -> (String, Vec<usize>) {
 //     0
 // }
 
-fn possible_arrangements2(
+fn possible_arrangements_dp(
     items: &String,
     damaged: &Vec<usize>,
     item_pos: usize,
@@ -79,15 +79,15 @@ fn possible_arrangements2(
     }
     let dot_ans = |seen: &mut HashMap<(usize, usize, usize), usize>| {
         if curr_block_size == 0 {
-            possible_arrangements2(items, damaged, item_pos + 1, damaged_pos, 0, seen)
+            possible_arrangements_dp(items, damaged, item_pos + 1, damaged_pos, 0, seen)
         } else if damaged_pos < damaged.len() && curr_block_size == damaged[damaged_pos] {
-            possible_arrangements2(items, damaged, item_pos + 1, damaged_pos + 1, 0, seen)
+            possible_arrangements_dp(items, damaged, item_pos + 1, damaged_pos + 1, 0, seen)
         } else {
             0
         }
     };
     let hash_ans = |seen: &mut HashMap<(usize, usize, usize), usize>| {
-        possible_arrangements2(
+        possible_arrangements_dp(
             items,
             damaged,
             item_pos + 1,
@@ -111,7 +111,7 @@ pub fn part_one(input: &str) -> Option<u64> {
         .lines()
         .map(parse_record)
         .map(|(items, damaged)| {
-            possible_arrangements2(&items, &damaged, 0, 0, 0, &mut HashMap::new())
+            possible_arrangements_dp(&items, &damaged, 0, 0, 0, &mut HashMap::new())
         })
         .collect();
     Some(num_arrangements.iter().sum::<usize>() as u64)
@@ -130,7 +130,7 @@ pub fn part_two(input: &str) -> Option<u64> {
         .map(parse_record)
         .map(|(items, damaged)| parse_part2(items, damaged))
         .map(|(items, damaged)| {
-            possible_arrangements2(&items, &damaged, 0, 0, 0, &mut HashMap::new())
+            possible_arrangements_dp(&items, &damaged, 0, 0, 0, &mut HashMap::new())
         })
         .collect();
     Some(num_arrangements.iter().sum::<usize>() as u64)
