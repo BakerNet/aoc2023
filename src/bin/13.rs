@@ -27,15 +27,13 @@ fn find_vertical_reflection(map: &Vec<Vec<char>>, type2: bool) -> Option<usize> 
 fn find_horizontal_reflection(map: &Vec<Vec<char>>, type2: bool) -> Option<usize> {
     for row in 0..map.len() - 1 {
         let mut reflection = !type2;
-        let mut diff_count = 0;
         for diff in 0..=cmp::min(row, map.len() - row - 2) {
             if !do_vecs_match(&map[row - diff], &map[row + diff + 1]) {
                 if type2
+                    && !reflection
                     && do_vecs_differ_by_one(&map[row - diff], &map[row + diff + 1])
-                    && diff_count == 0
                 {
                     reflection = true;
-                    diff_count = 1;
                 } else {
                     reflection = false;
                     break;
