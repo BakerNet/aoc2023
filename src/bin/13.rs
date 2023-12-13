@@ -13,6 +13,7 @@ fn do_vecs_differ_by_one<T: PartialEq>(a: &Vec<T>, b: &Vec<T>) -> bool {
 }
 
 fn find_vertical_reflection(map: &Vec<Vec<char>>, type2: bool) -> Option<usize> {
+    // invert map because horizontal check is simpler
     let mut new = Vec::new();
     for col in 0..map[0].len() {
         new.push(Vec::new());
