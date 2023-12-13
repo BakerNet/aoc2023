@@ -49,11 +49,11 @@ fn find_horizontal_reflection(map: &Vec<Vec<char>>, type2: bool) -> Option<usize
 
 fn find_reflection_value(map: &Vec<&str>, type2: bool) -> usize {
     let map = map.iter().map(|s| s.chars().collect()).collect();
-    if let Some(x) = find_vertical_reflection(&map, type2) {
-        return x + 1;
-    }
     if let Some(x) = find_horizontal_reflection(&map, type2) {
         return (x + 1) * 100;
+    }
+    if let Some(x) = find_vertical_reflection(&map, type2) {
+        return x + 1;
     }
     panic!("No reflection found: type 2 is {} - {:?}", type2, map);
 }
