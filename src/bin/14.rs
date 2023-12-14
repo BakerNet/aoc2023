@@ -1,4 +1,4 @@
-use std::collections::{HashMap, HashSet};
+use std::collections::HashMap;
 
 advent_of_code::solution!(14);
 
@@ -35,9 +35,7 @@ fn rotate_south(map: Vec<Vec<char>>) -> Vec<Vec<char>> {
                         map[loc][col] = 'O';
                         map[row][col] = '.';
                     }
-                    if loc > 0 {
-                        loc -= 1
-                    };
+                    loc = loc.saturating_sub(1);
                 }
                 '#' => {
                     if row > 0 {
@@ -63,9 +61,7 @@ fn rotate_east(map: Vec<Vec<char>>) -> Vec<Vec<char>> {
                         map[row][loc] = 'O';
                         map[row][col] = '.';
                     }
-                    if loc > 0 {
-                        loc -= 1
-                    };
+                    loc = loc.saturating_sub(1);
                 }
                 '#' => {
                     if col > 0 {
@@ -104,11 +100,8 @@ fn north_load(map: &Vec<Vec<char>>) -> u64 {
     let mut acc = 0;
     for col in 0..map[0].len() {
         for row in 0..map.len() {
-            match map[row][col] {
-                'O' => {
-                    acc += map.len() - row;
-                }
-                _ => {}
+            if map[row][col] == 'O' {
+                acc += map.len() - row;
             }
         }
     }

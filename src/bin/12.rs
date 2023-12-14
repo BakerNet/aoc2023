@@ -69,9 +69,9 @@ fn possible_arrangements_dp(
         return *x;
     }
     if item_pos == items.len() {
-        if damaged_pos == damaged.len() && curr_block_size == 0 {
-            return 1;
-        } else if damaged_pos == damaged.len() - 1 && curr_block_size == damaged[damaged_pos] {
+        if (damaged_pos == damaged.len() && curr_block_size == 0)
+            || (damaged_pos == damaged.len() - 1 && curr_block_size == damaged[damaged_pos])
+        {
             return 1;
         } else {
             return 0;

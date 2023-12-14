@@ -2,12 +2,12 @@ use std::cmp;
 
 advent_of_code::solution!(13);
 
-fn do_vecs_match<T: PartialEq>(a: &Vec<T>, b: &Vec<T>) -> bool {
+fn do_vecs_match<T: PartialEq>(a: &[T], b: &[T]) -> bool {
     let matching = a.iter().zip(b.iter()).filter(|&(a, b)| a == b).count();
     matching == a.len() && matching == b.len()
 }
 
-fn do_vecs_differ_by_one<T: PartialEq>(a: &Vec<T>, b: &Vec<T>) -> bool {
+fn do_vecs_differ_by_one<T: PartialEq>(a: &[T], b: &[T]) -> bool {
     let not_matching = a.iter().zip(b.iter()).filter(|&(a, b)| a != b).count();
     not_matching == 1
 }
@@ -17,8 +17,8 @@ fn find_vertical_reflection(map: &Vec<Vec<char>>, type2: bool) -> Option<usize> 
     let mut new = Vec::new();
     for col in 0..map[0].len() {
         new.push(Vec::new());
-        for row in 0..map.len() {
-            new[col].push(map[row][col]);
+        for row_vec in map {
+            new[col].push(row_vec[col]);
         }
     }
     find_horizontal_reflection(&new, type2)
@@ -47,7 +47,7 @@ fn find_horizontal_reflection(map: &Vec<Vec<char>>, type2: bool) -> Option<usize
     None
 }
 
-fn find_reflection_value(map: &Vec<&str>, type2: bool) -> usize {
+fn find_reflection_value(map: &[&str], type2: bool) -> usize {
     let map = map.iter().map(|s| s.chars().collect()).collect();
     if let Some(x) = find_horizontal_reflection(&map, type2) {
         return (x + 1) * 100;
@@ -63,7 +63,7 @@ pub fn part_one(input: &str) -> Option<u64> {
     let groups: Vec<Vec<&str>> = input
         .lines()
         .fold((0, groups), |mut acc, s| {
-            if s == "" {
+            if s.is_empty() {
                 acc.1.push(Vec::new());
                 acc.0 += 1;
             } else {
@@ -85,7 +85,7 @@ pub fn part_two(input: &str) -> Option<u64> {
     let groups: Vec<Vec<&str>> = input
         .lines()
         .fold((0, groups), |mut acc, s| {
-            if s == "" {
+            if s.is_empty() {
                 acc.1.push(Vec::new());
                 acc.0 += 1;
             } else {
