@@ -7,17 +7,6 @@ fn hash_it(s: &str) -> usize {
         .fold(0, |acc, x| (acc + x) * 17 % 256)
 }
 
-pub fn part_one(input: &str) -> Option<u64> {
-    let sum = input
-        .lines()
-        .next()
-        .unwrap()
-        .split(',')
-        .map(hash_it)
-        .sum::<usize>();
-    Some(sum as u64)
-}
-
 enum Op {
     Rem,
     Set(usize),
@@ -38,10 +27,21 @@ impl Op {
     }
 }
 
+pub fn part_one(input: &str) -> Option<u64> {
+    let sum = input
+        .lines()
+        .next()
+        .unwrap()
+        .split(',')
+        .map(hash_it)
+        .sum::<usize>();
+    Some(sum as u64)
+}
+
 pub fn part_two(input: &str) -> Option<u64> {
     let mut boxes: Vec<Vec<(String, usize)>> = vec![Vec::new(); 256];
     input.lines().next().unwrap().split(',').for_each(|s| {
-        let len = if s.chars().last().unwrap() == '-' {
+        let len = if s.ends_with('-') {
             s.len() - 1
         } else {
             s.len() - 2
