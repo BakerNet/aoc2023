@@ -121,7 +121,7 @@ pub fn part_one(input: &str) -> Option<u64> {
     let map: Vec<Vec<char>> = input.lines().map(|s| s.chars().collect()).collect();
     let map = rotate_north(map);
     let acc = north_load(&map);
-    Some(acc as u64)
+    Some(acc)
 }
 
 pub fn part_two(input: &str) -> Option<u64> {
@@ -150,7 +150,7 @@ pub fn part_two(input: &str) -> Option<u64> {
         map
     });
     let acc = north_load(&map);
-    Some(acc as u64)
+    Some(acc)
 }
 
 #[cfg(test)]

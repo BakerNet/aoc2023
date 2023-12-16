@@ -79,14 +79,13 @@ fn find_energized(map: &[Vec<char>], start: (usize, usize), direction: Direction
     let bounds = (map.len() - 1, map[0].len() - 1);
     while !queue.is_empty() {
         let (curr, dir) = queue.pop_front().unwrap();
-        if seen.contains(&(curr, dir)) {
-            continue;
-        }
         seen.insert((curr, dir));
         energized[curr.0][curr.1] = true;
         let mut add_to_queue = |curr: (usize, usize), dir: Direction| {
             if let Some(point) = next(curr, dir, bounds) {
-                queue.push_back((point, dir));
+                if !seen.contains(&(point, dir)) {
+                    queue.push_back((point, dir));
+                }
             }
         };
         match map[curr.0][curr.1] {
@@ -124,17 +123,17 @@ pub fn part_two(input: &str) -> Option<u64> {
     let map: Vec<Vec<char>> = input.lines().map(|line| line.chars().collect()).collect();
     let rows = map.len();
     let cols = map[0].len();
-    let horizontals = (0..rows).fold(0, |acc, index| {
+    let horizontal_max = (0..rows).fold(0, |acc, index| {
         let from_left = find_energized(&map, (index, 0), Direction::Right);
         let from_right = find_energized(&map, (index, cols - 1), Direction::Left);
         cmp::max(acc, cmp::max(from_left, from_right))
     });
-    let verticals = (0..cols).fold(0, |acc, index| {
+    let vertical_max = (0..cols).fold(0, |acc, index| {
         let from_top = find_energized(&map, (0, index), Direction::Down);
         let from_bottom = find_energized(&map, (rows - 1, index), Direction::Up);
         cmp::max(acc, cmp::max(from_top, from_bottom))
     });
-    Some(cmp::max(horizontals, verticals) as u64)
+    Some(cmp::max(horizontal_max, vertical_max) as u64)
 }
 
 #[cfg(test)]
