@@ -142,7 +142,7 @@ fn valid_neighbors(
         })
 }
 
-fn shortest_path(
+fn dijkstras_with_constraints(
     map: &[Vec<usize>],
     start: (usize, usize),
     goal: (usize, usize),
@@ -214,7 +214,7 @@ pub fn part_one(input: &str) -> Option<u64> {
                 .collect()
         })
         .collect();
-    shortest_path(&map, (0, 0), (map.len() - 1, map[0].len() - 1), false)
+    dijkstras_with_constraints(&map, (0, 0), (map.len() - 1, map[0].len() - 1), false)
 }
 
 pub fn part_two(input: &str) -> Option<u64> {
@@ -226,7 +226,7 @@ pub fn part_two(input: &str) -> Option<u64> {
                 .collect()
         })
         .collect();
-    shortest_path(&map, (0, 0), (map.len() - 1, map[0].len() - 1), true)
+    dijkstras_with_constraints(&map, (0, 0), (map.len() - 1, map[0].len() - 1), true)
 }
 
 #[cfg(test)]
