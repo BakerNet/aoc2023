@@ -179,7 +179,7 @@ fn shortest_path(
             }
         }
 
-        for (new_pos, new_dir) in valid_neighbors(&map, position, direction, dir_count, part2) {
+        for (new_pos, new_dir) in valid_neighbors(map, position, direction, dir_count, part2) {
             let next = State {
                 cost: cost + map[new_pos.0][new_pos.1],
                 position: new_pos,
