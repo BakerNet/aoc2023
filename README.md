@@ -6,7 +6,7 @@ Solutions for [Advent of Code](https://adventofcode.com/) in [Rust](https://www.
 
 ## Results
 
-| Day | Part 1 | Part 2 |
+| Day | Code | Part 1 | Part 2 |
 | :---: | :---: | :---: |
 | [Day 1](https://adventofcode.com/2023/day/1) | [code](src/bin/01.rs) | ⭐ | ⭐ |
 | [Day 2](https://adventofcode.com/2023/day/2) | [code](src/bin/02.rs) | ⭐ | ⭐ |
