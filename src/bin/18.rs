@@ -1,4 +1,4 @@
-use std::{cmp, collections::VecDeque, default};
+use std::cmp;
 
 use regex::Regex;
 
@@ -40,34 +40,64 @@ fn poly_area(points: &[(usize, usize)]) -> usize {
     diff / 2
 }
 
-fn find_start(instructions: &Vec<(Direction, usize)>) -> (usize, usize) {
+fn find_start(instructions: &[(Direction, usize)]) -> (usize, usize) {
     let horizontal_bounds = instructions
         .iter()
         .fold((0_isize, 0_isize), |mut acc, item| {
-            match item.0 {
-                Direction::Left => {
-                    acc.0 -= item.1 as isize;
-                    acc.1 = cmp::min(acc.0, acc.1);
-                }
-                _ => {}
+            if item.0 == Direction::Left {
+                acc.0 -= item.1 as isize;
+                acc.1 = cmp::min(acc.0, acc.1);
             }
             acc
         });
     let vertical_bounds = instructions
         .iter()
         .fold((0_isize, 0_isize), |mut acc, item| {
-            match item.0 {
-                Direction::Up => {
-                    acc.0 -= item.1 as isize;
-                    acc.1 = cmp::min(acc.0, acc.1);
-                }
-                _ => {}
+            if item.0 == Direction::Up {
+                acc.0 -= item.1 as isize;
+                acc.1 = cmp::min(acc.0, acc.1);
             }
             acc
         });
-    let offset_x = horizontal_bounds.1.abs() as usize;
-    let offset_y = vertical_bounds.1.abs() as usize;
+    let offset_x = horizontal_bounds.1.unsigned_abs();
+    let offset_y = vertical_bounds.1.unsigned_abs();
     (offset_y, offset_x)
+}
+
+fn find_points_and_perimeter(
+    instructions: &[(Direction, usize)],
+    start: (usize, usize),
+) -> (Vec<(usize, usize)>, usize) {
+    let (_, perimeter, points) = instructions.iter().fold(
+        (start, 0, Vec::with_capacity(instructions.len())),
+        |mut acc, item| {
+            match item.0 {
+                Direction::Up => {
+                    let next = (acc.0 .0 - item.1, acc.0 .1);
+                    acc.2.push(next);
+                    acc.0 = next;
+                }
+                Direction::Down => {
+                    let next = (acc.0 .0 + item.1, acc.0 .1);
+                    acc.2.push(next);
+                    acc.0 = next;
+                }
+                Direction::Left => {
+                    let next = (acc.0 .0, acc.0 .1 - item.1);
+                    acc.2.push(next);
+                    acc.0 = next;
+                }
+                Direction::Right => {
+                    let next = (acc.0 .0, acc.0 .1 + item.1);
+                    acc.2.push(next);
+                    acc.0 = next;
+                }
+            };
+            acc.1 += item.1;
+            acc
+        },
+    );
+    (points, perimeter)
 }
 
 // // evidence of original naive solution - build map border -> fill in with trenches -> count trenches
@@ -100,37 +130,9 @@ pub fn part_one(input: &str) -> Option<u64> {
         })
         .collect();
     let start = find_start(&instructions);
-    let (_, circumferance, points) = instructions.iter().fold(
-        (start, 0, Vec::with_capacity(instructions.len())),
-        |mut acc, item| {
-            match item.0 {
-                Direction::Up => {
-                    let next = (acc.0 .0 - item.1, acc.0 .1);
-                    acc.2.push(next);
-                    acc.0 = next;
-                }
-                Direction::Down => {
-                    let next = (acc.0 .0 + item.1, acc.0 .1);
-                    acc.2.push(next);
-                    acc.0 = next;
-                }
-                Direction::Left => {
-                    let next = (acc.0 .0, acc.0 .1 - item.1);
-                    acc.2.push(next);
-                    acc.0 = next;
-                }
-                Direction::Right => {
-                    let next = (acc.0 .0, acc.0 .1 + item.1);
-                    acc.2.push(next);
-                    acc.0 = next;
-                }
-            };
-            acc.1 += item.1;
-            acc
-        },
-    );
+    let (points, perimeter) = find_points_and_perimeter(&instructions, start);
     let inner_area = poly_area(&points);
-    Some((inner_area + 1 + circumferance / 2) as u64)
+    Some((inner_area + 1 + perimeter / 2) as u64)
 }
 
 pub fn part_two(input: &str) -> Option<u64> {
@@ -153,37 +155,9 @@ pub fn part_two(input: &str) -> Option<u64> {
         })
         .collect();
     let start = find_start(&instructions);
-    let (_, circumferance, points) = instructions.iter().fold(
-        (start, 0, Vec::with_capacity(instructions.len())),
-        |mut acc, item| {
-            match item.0 {
-                Direction::Up => {
-                    let next = (acc.0 .0 - item.1, acc.0 .1);
-                    acc.2.push(next);
-                    acc.0 = next;
-                }
-                Direction::Down => {
-                    let next = (acc.0 .0 + item.1, acc.0 .1);
-                    acc.2.push(next);
-                    acc.0 = next;
-                }
-                Direction::Left => {
-                    let next = (acc.0 .0, acc.0 .1 - item.1);
-                    acc.2.push(next);
-                    acc.0 = next;
-                }
-                Direction::Right => {
-                    let next = (acc.0 .0, acc.0 .1 + item.1);
-                    acc.2.push(next);
-                    acc.0 = next;
-                }
-            };
-            acc.1 += item.1;
-            acc
-        },
-    );
+    let (points, perimeter) = find_points_and_perimeter(&instructions, start);
     let inner_area = poly_area(&points);
-    Some((inner_area + 1 + circumferance / 2) as u64)
+    Some((inner_area + 1 + perimeter / 2) as u64)
 }
 
 #[cfg(test)]
