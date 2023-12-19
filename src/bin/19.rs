@@ -146,24 +146,14 @@ impl PartRanges {
     }
 
     fn is_valid(&self) -> bool {
-        if self.x.is_empty() {
-            false
-        } else if self.m.is_empty() {
-            false
-        } else if self.a.is_empty() {
-            false
-        } else if self.s.is_empty() {
-            false
-        } else {
-            true
-        }
+        !(self.x.is_empty() || self.m.is_empty() || self.a.is_empty() || self.s.is_empty())
     }
 
-    fn total_values(&self) -> usize {
-        self.x.clone().count()
-            * self.m.clone().count()
-            * self.a.clone().count()
-            * self.s.clone().count()
+    fn total_values(self) -> usize {
+        self.x.count()
+            * self.m.count()
+            * self.a.count()
+            * self.s.count()
     }
 
     fn shifted_greater(&self, cat: &Category, num: usize) -> Self {
@@ -195,7 +185,7 @@ pub fn part_one(input: &str) -> Option<u64> {
         input
             .lines()
             .fold((HashMap::new(), Vec::new(), false), |mut acc, line| {
-                if line == "" {
+                if line.is_empty() {
                     acc.2 = true;
                     return acc;
                 }
@@ -242,7 +232,7 @@ pub fn part_two(input: &str) -> Option<u64> {
     let workflows: HashMap<String, Vec<Op>> =
         input
             .lines()
-            .take_while(|&line| line != "")
+            .take_while(|&line| !line.is_empty())
             .fold(HashMap::new(), |mut acc, line| {
                 let splits = re
                     .captures(line)
