@@ -178,26 +178,25 @@ impl PartRanges {
 
 pub fn part_one(input: &str) -> Option<u64> {
     let re = Regex::new(r"^([a-zA-Z]+)\{(.+)\}$").unwrap();
-    let (workflows_map, parts, _): (HashMap<String, Vec<Workflow>>, Vec<Part>, bool) =
-        input
-            .lines()
-            .fold((HashMap::new(), Vec::new(), false), |mut acc, line| {
-                if line.is_empty() {
-                    acc.2 = true;
-                    return acc;
-                }
-                if !acc.2 {
-                    let splits = re
-                        .captures(line)
-                        .unwrap_or_else(|| panic!("Should be able to split workflow {}", line));
-                    let key = &splits[1];
-                    let workflows = splits[2].split(',').map(Workflow::from).collect();
-                    acc.0.insert(key.to_owned(), workflows);
-                } else {
-                    acc.1.push(Part::from(line));
-                }
-                acc
-            });
+    let (workflows_map, parts, _): (HashMap<String, Vec<Workflow>>, Vec<Part>, bool) = input
+        .lines()
+        .fold((HashMap::new(), Vec::new(), false), |mut acc, line| {
+            if line.is_empty() {
+                acc.2 = true;
+                return acc;
+            }
+            if !acc.2 {
+                let splits = re
+                    .captures(line)
+                    .unwrap_or_else(|| panic!("Should be able to split workflow {}", line));
+                let key = &splits[1];
+                let workflows = splits[2].split(',').map(Workflow::from).collect();
+                acc.0.insert(key.to_owned(), workflows);
+            } else {
+                acc.1.push(Part::from(line));
+            }
+            acc
+        });
     let mut accepted = Vec::new();
     for part in parts.iter() {
         let mut curr = String::from("in");
