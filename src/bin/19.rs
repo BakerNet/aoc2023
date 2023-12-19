@@ -45,13 +45,13 @@ impl Result {
 }
 
 #[derive(Debug, Clone)]
-enum Op {
+enum Workflow {
     Greater(Category, usize, Result),
     Less(Category, usize, Result),
     Nil(Result),
 }
 
-impl Op {
+impl Workflow {
     fn from(s: &str) -> Self {
         if !s.contains(':') {
             return Self::Nil(Result::from(s));
@@ -150,10 +150,7 @@ impl PartRanges {
     }
 
     fn total_values(self) -> usize {
-        self.x.count()
-            * self.m.count()
-            * self.a.count()
-            * self.s.count()
+        self.x.count() * self.m.count() * self.a.count() * self.s.count()
     }
 
     fn shifted_greater(&self, cat: &Category, num: usize) -> Self {
@@ -181,7 +178,7 @@ impl PartRanges {
 
 pub fn part_one(input: &str) -> Option<u64> {
     let re = Regex::new(r"^([a-zA-Z]+)\{(.+)\}$").unwrap();
-    let (workflows, parts, _): (HashMap<String, Vec<Op>>, Vec<Part>, bool) =
+    let (workflows_map, parts, _): (HashMap<String, Vec<Workflow>>, Vec<Part>, bool) =
         input
             .lines()
             .fold((HashMap::new(), Vec::new(), false), |mut acc, line| {
@@ -194,8 +191,8 @@ pub fn part_one(input: &str) -> Option<u64> {
                         .captures(line)
                         .unwrap_or_else(|| panic!("Should be able to split workflow {}", line));
                     let key = &splits[1];
-                    let ops = splits[2].split(',').map(Op::from).collect();
-                    acc.0.insert(key.to_owned(), ops);
+                    let workflows = splits[2].split(',').map(Workflow::from).collect();
+                    acc.0.insert(key.to_owned(), workflows);
                 } else {
                     acc.1.push(Part::from(line));
                 }
@@ -205,9 +202,9 @@ pub fn part_one(input: &str) -> Option<u64> {
     for part in parts.iter() {
         let mut curr = String::from("in");
         let result = 'outer: loop {
-            let checks = workflows.get(&curr).expect("Should find in map");
-            for check in checks.iter() {
-                let item = check.check(part);
+            let workflows = workflows_map.get(&curr).expect("Should find in map");
+            for workflow in workflows.iter() {
+                let item = workflow.check(part);
                 if let Some(res) = &item {
                     match res {
                         Result::Accept => break 'outer true,
@@ -229,19 +226,18 @@ pub fn part_one(input: &str) -> Option<u64> {
 
 pub fn part_two(input: &str) -> Option<u64> {
     let re = Regex::new(r"^([a-zA-Z]+)\{(.+)\}$").unwrap();
-    let workflows: HashMap<String, Vec<Op>> =
-        input
-            .lines()
-            .take_while(|&line| !line.is_empty())
-            .fold(HashMap::new(), |mut acc, line| {
-                let splits = re
-                    .captures(line)
-                    .unwrap_or_else(|| panic!("Should be able to split workflow {}", line));
-                let key = &splits[1];
-                let ops = splits[2].split(',').map(Op::from).collect();
-                acc.insert(key.to_owned(), ops);
-                acc
-            });
+    let workflows_map: HashMap<String, Vec<Workflow>> = input
+        .lines()
+        .take_while(|&line| !line.is_empty())
+        .fold(HashMap::new(), |mut acc, line| {
+            let splits = re
+                .captures(line)
+                .unwrap_or_else(|| panic!("Should be able to split workflow {}", line));
+            let key = &splits[1];
+            let workflows = splits[2].split(',').map(Workflow::from).collect();
+            acc.insert(key.to_owned(), workflows);
+            acc
+        });
     let mut total = 0;
     let mut queue: VecDeque<(PartRanges, &Result)> = VecDeque::new();
     let start = Result::Next(String::from("in"));
@@ -256,21 +252,21 @@ pub fn part_two(input: &str) -> Option<u64> {
             Result::Reject => continue,
             Result::Next(s) => {
                 // for each Op in workflows[s] > create new ranges & add to queue
-                let checks = workflows.get(s).expect("Should find workflow");
+                let workflows = workflows_map.get(s).expect("Should find workflow");
                 let mut leftover_ranges = ranges.clone();
-                checks.iter().for_each(|check| match check {
-                    Op::Greater(cat, num, new_res) => {
+                workflows.iter().for_each(|workflow| match workflow {
+                    Workflow::Greater(cat, num, new_res) => {
                         let new_ranges = leftover_ranges.shifted_greater(cat, *num);
                         queue.push_back((new_ranges, new_res));
                         leftover_ranges = leftover_ranges.shifted_less(cat, *num + 1);
                     }
-                    Op::Less(cat, num, new_res) => {
+                    Workflow::Less(cat, num, new_res) => {
                         let new_ranges = leftover_ranges.shifted_less(cat, *num);
                         queue.push_back((new_ranges, new_res));
                         leftover_ranges = leftover_ranges.shifted_greater(cat, *num - 1);
                     }
                     // should be last iteration
-                    Op::Nil(new_res) => queue.push_back((leftover_ranges.clone(), new_res)),
+                    Workflow::Nil(new_res) => queue.push_back((leftover_ranges.clone(), new_res)),
                 })
             }
         }
