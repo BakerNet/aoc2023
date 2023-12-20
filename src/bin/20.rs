@@ -33,11 +33,11 @@ enum Module {
 impl Module {
     fn with_name_from(line: &str) -> (String, Self) {
         let parts: Vec<_> = line.split(" -> ").collect();
-        if line.starts_with("%") {
+        if line.starts_with('%') {
             let name = &parts[0][1..];
             let outputs = parts[1].split(", ").map(|s| s.to_owned()).collect();
             (name.to_owned(), Self::FlipFlop(false, outputs))
-        } else if line.starts_with("&") {
+        } else if line.starts_with('&') {
             let name = &parts[0][1..];
             let outputs = parts[1].split(", ").map(|s| s.to_owned()).collect();
             (name.to_owned(), Self::Conjunction(Vec::new(), outputs))
@@ -53,7 +53,7 @@ impl Module {
         }
     }
 
-    fn update_state(&mut self, names: Vec<String>) -> () {
+    fn update_state(&mut self, names: Vec<String>) {
         if let Self::Conjunction(ref mut state, _) = self {
             *state = names.iter().map(|s| (s.to_owned(), Pulse::Low)).collect();
         }
@@ -166,6 +166,7 @@ fn press_button_part2(
 }
 
 fn modules_from_input(input: &str) -> (Vec<String>, HashMap<String, Module>, Option<String>) {
+    #[allow(clippy::type_complexity)]
     let (broadcast, mut modules, inputs): (
         Vec<String>,
         HashMap<String, Module>,
