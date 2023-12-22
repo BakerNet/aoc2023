@@ -1,4 +1,7 @@
-use std::{cmp::Ordering, collections::HashMap};
+use std::{
+    cmp::{Ordering, Reverse},
+    collections::{BinaryHeap, HashMap, HashSet},
+};
 
 advent_of_code::solution!(22);
 
@@ -151,7 +154,7 @@ fn drop_floating_blocks(blocks: Vec<Block>) -> (Vec<Block>, Vec<Vec<Block>>) {
     (blocks, tops[0..=max].to_vec())
 }
 
-#[derive(Debug)]
+#[derive(Debug, PartialEq, Eq, PartialOrd, Ord)]
 struct BlockNode {
     block: Block,
     children: Vec<usize>,
@@ -184,6 +187,33 @@ fn build_tree(supports: Vec<Vec<Block>>) -> HashMap<usize, BlockNode> {
     map
 }
 
+fn find_max_weight(tree: &HashMap<usize, BlockNode>, start: usize) -> usize {
+    let mut pqueue = BinaryHeap::new();
+    let mut seen = HashSet::new();
+    let root = tree.get(&start).unwrap();
+    pqueue.push(Reverse(root));
+    seen.insert(start);
+    let mut count = 0;
+    let mut history = Vec::new();
+    while !pqueue.is_empty() {
+        let node = pqueue.pop().unwrap().0;
+        history.push(node.block.key);
+        node.children.iter().for_each(|n| {
+            if seen.contains(n) {
+                return;
+            }
+            let child = tree.get(n).unwrap();
+            if child.parents.iter().any(|pn| !seen.contains(pn)) {
+                return;
+            }
+            seen.insert(*n);
+            pqueue.push(Reverse(child));
+            count += 1;
+        })
+    }
+    count
+}
+
 pub fn part_one(input: &str) -> Option<u64> {
     // step 1:  Bring blocks down from floating
     // step 2:  Build dependency tree for blocks
@@ -211,7 +241,19 @@ pub fn part_one(input: &str) -> Option<u64> {
 }
 
 pub fn part_two(input: &str) -> Option<u64> {
-    None
+    let mut blocks: Vec<_> = input
+        .lines()
+        .enumerate()
+        .map(|(i, s)| Block::from(s, i))
+        .collect();
+    blocks.sort();
+    let (_, supports) = drop_floating_blocks(blocks);
+    let tree = build_tree(supports);
+    let results = tree
+        .values()
+        .map(|n| find_max_weight(&tree, n.block.key))
+        .collect::<Vec<usize>>();
+    Some(results.iter().sum::<usize>() as u64)
 }
 
 #[cfg(test)]
@@ -227,6 +269,6 @@ mod tests {
     #[test]
     fn test_part_two() {
         let result = part_two(&advent_of_code::template::read_file("examples", DAY));
-        assert_eq!(result, None);
+        assert_eq!(result, Some(7));
     }
 }
