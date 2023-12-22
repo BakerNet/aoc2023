@@ -97,8 +97,8 @@ impl Block {
 
     fn lower_to(&mut self, new_z: usize) {
         let diff = self.lowest_z() - new_z;
-        self.start.z = self.start.z - diff;
-        self.end.z = self.end.z - diff;
+        self.start.z -= diff;
+        self.end.z -= diff;
     }
 }
 
@@ -131,7 +131,7 @@ fn drop_floating_blocks(blocks: Vec<Block>) -> (Vec<Block>, Vec<Vec<Block>>) {
     let mut max = highest_possible;
     blocks.iter_mut().for_each(|b| {
         if b.lowest_z() == 1 {
-            tops[b.highest_z()].push(b.clone());
+            tops[b.highest_z()].push(*b);
         } else {
             let mut indices = (1..b.lowest_z()).rev();
             let new_z = loop {
@@ -144,7 +144,7 @@ fn drop_floating_blocks(blocks: Vec<Block>) -> (Vec<Block>, Vec<Vec<Block>>) {
                 }
             };
             b.lower_to(new_z);
-            tops[b.highest_z()].push(b.clone());
+            tops[b.highest_z()].push(*b);
             max = b.highest_z();
         }
     });
@@ -158,7 +158,7 @@ struct BlockNode {
     parents: Vec<usize>,
 }
 
-fn build_tree(supports: Vec<Vec<Block>>) -> (HashMap<usize, BlockNode>) {
+fn build_tree(supports: Vec<Vec<Block>>) -> HashMap<usize, BlockNode> {
     let mut map: HashMap<usize, BlockNode> = HashMap::new();
     supports.iter().flatten().for_each(|block| {
         let bottom = block.lowest_z();
@@ -200,18 +200,11 @@ pub fn part_one(input: &str) -> Option<u64> {
     let count = tree
         .values()
         .filter(|node| {
-            if node.children.len() == 0 {
-                true
-            } else {
-                if node.children.iter().all(|child| {
+            node.children.is_empty()
+                || node.children.iter().all(|child| {
                     let child_node = tree.get(child).unwrap();
                     child_node.parents.len() > 1
-                }) {
-                    true
-                } else {
-                    false
-                }
-            }
+                })
         })
         .count();
     Some(count as u64)
