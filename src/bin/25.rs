@@ -1,14 +1,14 @@
 advent_of_code::solution!(25);
-use std::collections::{HashMap, HashSet};
 
-use std::io::Error;
+use std::collections::{HashMap, HashSet};
 
 use petgraph::graph::{NodeIndex, UnGraph};
 use rustworkx_core::connectivity::stoer_wagner_min_cut;
 
 type Edge = (NodeIndex, NodeIndex);
+type Component = (String, Vec<String>);
 
-fn parse_component(s: &str) -> (String, Vec<String>) {
+fn parse_component(s: &str) -> Component {
     let mut splits = s.split(": ");
     let from = splits.next().unwrap();
     let v = splits
@@ -22,25 +22,36 @@ fn parse_component(s: &str) -> (String, Vec<String>) {
 
 pub fn part_one(input: &str) -> Option<u64> {
     let mut graph: UnGraph<(), ()> = UnGraph::new_undirected();
-    let graph_map: HashMap<String, (NodeIndex, Vec<String>)> = input
+    let graph_input = input
         .lines()
         .map(parse_component)
-        .fold(HashMap::new(), |mut acc, component| {
-            acc.entry(component.0.clone())
-                .and_modify(|(_, v)| v.extend(component.1.clone()))
-                .or_insert_with(|| (graph.add_node(()), component.1.clone()));
-            component.1.iter().for_each(|item| {
-                acc.entry(item.to_owned())
-                    .and_modify(|(_, v)| v.push(component.0.clone()))
-                    .or_insert_with(|| (graph.add_node(()), vec![component.0.clone()]));
+        .collect::<Vec<Component>>();
+    let graph_map: HashMap<&str, (NodeIndex, Vec<&str>)> =
+        graph_input
+            .iter()
+            .fold(HashMap::new(), |mut acc, component| {
+                acc.entry(&component.0)
+                    .and_modify(|(_, v)| {
+                        v.extend(component.1.iter().map(AsRef::as_ref).collect::<Vec<&str>>())
+                    })
+                    .or_insert_with(|| {
+                        (
+                            graph.add_node(()),
+                            component.1.iter().map(AsRef::as_ref).collect(),
+                        )
+                    });
+                component.1.iter().for_each(|item| {
+                    acc.entry(item)
+                        .and_modify(|(_, v)| v.push(&component.0))
+                        .or_insert_with(|| (graph.add_node(()), vec![&component.0]));
+                });
+                acc
             });
-            acc
-        });
     let num_nodes = graph_map.len() as u64;
     let edges = edges_from_graph(&graph_map);
     graph.extend_with_edges(edges);
 
-    let (min_cut, partition) = stoer_wagner_min_cut(&graph, |_| Ok::<i32, Error>(1))
+    let (min_cut, partition) = stoer_wagner_min_cut(&graph, |_| Ok::<i32, ()>(1))
         .expect("Expect stoer wagner to work")
         .expect("Expect stoer wagner to be Some");
     assert_eq!(min_cut, 3);
@@ -48,7 +59,7 @@ pub fn part_one(input: &str) -> Option<u64> {
     Some(partition_len * (num_nodes - partition_len))
 }
 
-fn edges_from_graph(graph: &HashMap<String, (NodeIndex, Vec<String>)>) -> HashSet<Edge> {
+fn edges_from_graph(graph: &HashMap<&str, (NodeIndex, Vec<&str>)>) -> HashSet<Edge> {
     let mut ret = HashSet::new();
 
     graph.values().for_each(|(n, v)| {
