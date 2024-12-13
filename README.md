@@ -1,3 +1,6 @@
+> [!NOTE]
+> This code now lives at [aoc](https://github.com/BakerNet/aoc)
+
 <img src="./.assets/christmas_ferris.png" width="164">
 
 # 🎄 Advent of Code 2023
